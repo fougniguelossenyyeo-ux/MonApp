@@ -1,0 +1,10 @@
+   .sidebar-link.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
