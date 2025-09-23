@@ -10,7 +10,11 @@
   @vite('resources/css/app.css')
  <!-- Charger le JS avec Vite -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+  
   @if(session('success'))
     document.addEventListener('DOMContentLoaded', function() {
       Swal.fire({

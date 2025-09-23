@@ -82,6 +82,17 @@
 
                     <!-- Security Information -->
                     <h3 class="text-xl font-semibold text-gray-900 mb-6">Sécurité du compte</h3>
+                       <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+                            <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+        @foreach($roles as $role)
+            <option value="{{ $role->id }}" {{ isset($user) && $role->id == $user->role_id ? 'selected' : '' }}>
+                {{ $role->libelle }}
+            </option>
+        @endforeach
+    </select>
+                        </div>
+
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe (laisser vide pour ne pas changer)</label>

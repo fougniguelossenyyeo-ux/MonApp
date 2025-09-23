@@ -24,7 +24,7 @@
 
         <nav class="mt-6 px-4">
             <div class="space-y-1">
-                <a href="dashboards.html" class="sidebar-link active flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                <a href="{{route('dashboard')}}" class="sidebar-link active flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                     <i class="fas fa-home mr-3"></i>
                     <span id="dashboardText">Tableau de bord</span>
                 </a>

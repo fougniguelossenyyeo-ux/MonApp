@@ -14,7 +14,7 @@ use App\Http\Controllers\RoleController;
 |
 */// Page d’accueil
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.login');
 });
 
 // Auth

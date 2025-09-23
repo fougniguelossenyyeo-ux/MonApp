@@ -1,6 +1,7 @@
 @extends('layouts.template') 
 @section('maincontent')
 @include('layouts.Adminheader')
+
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="md:flex">
@@ -97,7 +98,18 @@
 
                     <!-- Step 2: Security -->
                     <div id="step2" class="step-content hidden">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Sécurité du compte</h3>
+
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Sécurité du compte et rôle</h3>
+                <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+    <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+        @foreach($roles as $role)
+            <option value="{{ $role->id }}" {{ isset($user) && $role->id == $user->role_id ? 'selected' : '' }}>
+                {{ $role->libelle }}
+            </option>
+        @endforeach
+    </select>
+</div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
@@ -106,12 +118,6 @@
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center password-toggle" onclick="togglePassword('password')">
                                     <i class="fas fa-eye text-gray-400"></i>
                                 </div>
-                            </div>
-                            <div class="mt-2">
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div id="passwordStrength" class="bg-gray-400 h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <p id="passwordMessage" class="text-xs text-gray-500 mt-1">Votre mot de passe doit contenir au moins 8 caractères</p>
                             </div>
                         </div>
 
@@ -123,10 +129,7 @@
                                     <i class="fas fa-eye text-gray-400"></i>
                                 </div>
                             </div>
-                            <p id="passwordMatch" class="text-xs text-gray-500 mt-1 hidden">Les mots de passe correspondent</p>
                         </div>
-
-                       
                     </div>
 
                     <!-- Navigation Buttons -->
@@ -149,4 +152,66 @@
 
 @vite(['resources/js/inscription.js'])
 
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registrationForm');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Gestion du bouton "Suivant"
+    nextBtn.addEventListener('click', function() {
+        step1.classList.add('hidden');
+        step2.classList.remove('hidden');
+        nextBtn.classList.add('hidden');
+        prevBtn.classList.remove('hidden');
+        submitBtn.classList.remove('hidden');
+    });
+
+    // Gestion du bouton "Précédent"
+    prevBtn.addEventListener('click', function() {
+        step2.classList.add('hidden');
+        step1.classList.remove('hidden');
+        nextBtn.classList.remove('hidden');
+        prevBtn.classList.add('hidden');
+        submitBtn.classList.add('hidden');
+    });
+
+    // Interception du submit avec SweetAlert2
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Êtes-vous sûr ?',
+            text: "Voulez-vous vraiment créer ce compte ?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4F46E5',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Oui, créer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+
+    // Message de succès après redirection
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+});
+</script>
 @endsection

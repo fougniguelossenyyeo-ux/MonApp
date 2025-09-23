@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-
+use App\Models\Role;
 
 class AuthController extends Controller
 {
     // Afficher la page de login
     public function showLoginForm()
     {
-        return view('auth.login');
+        return view('auth.login', );
     }
 
     // Traiter la connexion
@@ -38,8 +38,11 @@ class AuthController extends Controller
     }
     // Afficher le formulaire d’inscription
 public function showRegisterForm()
+
 {
-    return view('auth.register');
+    $roles = Role::all();
+       
+    return view('auth.register',compact('roles'));
 }
 
 // Traiter l'inscription
@@ -51,8 +54,10 @@ public function showRegisterForm()
         'email' => 'required|string|email|max:255|unique:users',
         'poste' => 'nullable|string|max:255',
         'fonction' => 'nullable|string|max:255',
+        'role_id' => 'required|string|exists:roles,id',
         'password' => 'required|string|min:8|confirmed',
     ]);
+
 
     $user = User::create([
         'nom' => $validated['nom'],
@@ -60,6 +65,7 @@ public function showRegisterForm()
         'email' => $validated['email'],
         'poste' => $validated['poste'] ?? null,
         'fonction' => $validated['fonction'] ?? null,
+        'role_id' => $validated['role_id'],
         'password' => Hash::make($validated['password']),
     ]);
 
@@ -78,8 +84,10 @@ public function showRegisterForm()
  // Afficher le formulaire d’édition
     public function edit($id)
     {
+    $roles = Role::all();    
+    
         $user = User::findOrFail($id);
-        return view('auth.edit', compact('user'));
+        return view('auth.edit', compact('user','roles'));
     }
     
    
@@ -94,6 +102,7 @@ public function showRegisterForm()
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'poste' => 'nullable|string|max:255',
             'fonction' => 'nullable|string|max:255',
+              'role_id' => 'required|string|exists:roles,id',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
@@ -102,6 +111,7 @@ public function showRegisterForm()
         $user->email = $validated['email'];
         $user->poste = $validated['poste'] ?? null;
         $user->fonction = $validated['fonction'] ?? null;
+         $user->role_id = $validated['role_id'];
 
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);

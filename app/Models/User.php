@@ -21,6 +21,7 @@ class User extends Authenticatable
         'email',
         'poste',
         'fonction',
+         'role_id',  
         'password',
     ];
 
@@ -44,5 +45,9 @@ class User extends Authenticatable
                 $model->id = Str::uuid()->toString();
             }
         });
+    }
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 }
