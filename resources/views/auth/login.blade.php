@@ -8,6 +8,41 @@
 
   <!-- Tailwind CSS via Vite -->
   @vite('resources/css/app.css')
+ <!-- Charger le JS avec Vite -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  <script>
+  @if(session('success'))
+    document.addEventListener('DOMContentLoaded', function() {
+      Swal.fire({
+        icon: 'success',
+        title: 'Succès',
+        text: "{{ session('success') }}",
+        timer: 3000,
+        showConfirmButton: false
+      });
+    });
+  @endif
+
+  @if(session('error'))
+    document.addEventListener('DOMContentLoaded', function() {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: "{{ session('error') }}",
+      });
+    });
+  @endif
+
+  @if($errors->any())
+    document.addEventListener('DOMContentLoaded', function() {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur de validation',
+        html: `{!! implode('<br>', $errors->all()) !!}`,
+      });
+    });
+  @endif
+</script>
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -132,3 +167,5 @@
 
 </body>
 </html>
+
+

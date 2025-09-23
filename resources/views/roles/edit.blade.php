@@ -1,30 +1,9 @@
 @extends('layouts.template')
 @section('maincontent')
-
+@include('layouts.Adminheader')
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Breadcrumbs -->
-            <nav class="flex mb-6" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="Administrateur.html" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-                            <i class="fas fa-cog mr-2"></i>
-                            Administration
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
-                            <a href="#" class="ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600 md:ml-2">Gestion des rôles</a>
-                        </div>
-                    </li>
-                    <li aria-current="page">
-                        <div class="flex items-center">
-                            <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
-                            <span class="ml-1 text-sm font-medium text-indigo-600 md:ml-2">Création de rôle</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
+           
 
             <!-- Formulaire de création de rôle -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -70,3 +49,19 @@
 
 
 @endsection
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+});
+</script>
+@endsection
+    

@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="styles.css">
     
        <link rel="stylesheet" href="style1.css">
+       @vite(['resources/css/app.css', 'resources/js/app.js'])
+  
+
     
 </head>
 <body class="min-h-screen" style="background-color: #f0f4ff;">
@@ -33,7 +36,9 @@
         <!-- Contenu principal -->
         @yield('maincontent')
     </div>
-
-
+ <script src="{{asset('assets/js/insccription.js')}}">
+      
+    </script>
+@yield('scripts')
 </body>
 </html>
