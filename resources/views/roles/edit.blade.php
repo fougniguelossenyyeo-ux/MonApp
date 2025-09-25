@@ -33,14 +33,21 @@
 
             <!-- Sélection de l'entité -->
             <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-<select name="role_id" required class="form-input w-1/2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
-    @foreach($roles as $role)
-        <option value="{{ $role->id }}" {{ $role->id == $user->role_id ? 'selected' : '' }}>
-            {{ $role->libelle }}
-        </option>
-    @endforeach
-</select>
+
+   <label class="block text-sm font-medium text-gray-700 mb-2">
+        Entité <span class="text-red-500">*</span>
+    </label>
+    <select 
+        name="entite_id" 
+        required 
+        class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+    >
+        @foreach($entites as $entite)
+            <option value="{{ $entite->id }}" {{ $entite->id == $role->entite_id ? 'selected' : '' }}>
+                {{ $entite->libelle_entite }}
+            </option>
+        @endforeach
+    </select>
 
             </div>
 

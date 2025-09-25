@@ -23,13 +23,22 @@ class EntiteController extends Controller
         return view('entites.create');
     }
 
+  
     public function store(Request $request)
-    {
-        $request->validate([
-            'libelle_entite' => 'required|string|max:255']);
-       $request->only(['libelle_entite']);
-        return redirect()->route('entites.index')->with('success', 'Entité créé avec succès.');
-    }
+{
+    $request->validate([
+        'libelle_entite' => 'required|string|max:255',
+    ]);
+
+    // Création de l'entité
+    Entite::create([
+        'libelle_entite' => $request->libelle_entite,
+    ]);
+
+    return redirect()->route('entites.index')
+                     ->with('success', 'Entité créée avec succès.');
+}
+
 
     public function edit(Entite $entite)
     {

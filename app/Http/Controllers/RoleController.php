@@ -28,15 +28,17 @@ class RoleController extends Controller
     $entites = Entite::all();
     return view('roles.create', compact('entites'));
 }
-    public function store(Request $request)
-    {
-        $request->validate(['libelle' => 'required|string|max:255',
-      'entite_id' => 'required|string|exists:entites,id',
-         ]);
+   public function store(Request $request)
+{
+    $validated = $request->validate([
+        'libelle' => 'required|string|max:255',
+        'entite_id' => 'required|string|exists:entites,id',
+    ]);
 
-        $request->only(['libelle', 'entite_id']);
-        return redirect()->route('roles.index')->with('success', 'Rôle créé avec succès.');
-    }
+    Role::create($validated); // ça enregistre le rôle
+
+    return redirect()->route('roles.index')->with('success', 'Rôle créé avec succès.');
+}
 
     public function edit(Role $role)
     {

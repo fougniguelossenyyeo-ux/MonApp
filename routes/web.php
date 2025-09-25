@@ -20,7 +20,7 @@ Route::get('/', function () {
 
 // Auth
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('auth.register.form');
-Route::post('/register', [AuthController::class, 'register'])->name('auth.register.store');
+Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 // Utilisateurs
@@ -30,7 +30,7 @@ Route::put('/users/{id}', [AuthController::class, 'update'])->name('users.update
 Route::delete('/users/{id}', [AuthController::class, 'destroy'])->name('users.destroy');
 
 
-Route::get('/users', [AuthController::class, 'listregister'])->name('users.list');
+
 Route::get('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 // Dashboard (protégé)
 Route::get('/dashboard', [AdminController::class, 'index'])

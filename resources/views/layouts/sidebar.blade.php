@@ -44,7 +44,7 @@
                     <i class="fas fa-archive mr-3"></i>
                     <span id="archivesText">Archives</span>
                 </a>
-                   <a href="{{route('auth.register.form')}}" class="sidebar-link active flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                   <a href="{{route('users.list')}}" class="sidebar-link active flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                     <i class="fas fa-cog mr-3"></i>
                     <span id="adminText">Administration</span>
                 </a>

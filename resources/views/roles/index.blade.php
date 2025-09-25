@@ -25,7 +25,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre d'utilisateurs</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entité</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -40,9 +40,10 @@
                                 1 utilisateur
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">
-                            Direction des Affaires Financières
-                        </td>
+                       <td class="px-6 py-4 text-sm text-gray-500">
+                           {{ $role->entite->libelle_entite ?? '-' }}
+                          </td>
+
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
                                 <!-- Bouton Modifier -->
