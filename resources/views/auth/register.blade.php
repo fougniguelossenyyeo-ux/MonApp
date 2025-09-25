@@ -53,7 +53,6 @@
                     </div>
                 </div>
 
-                <!-- Form -->
                 <form method="POST" action="{{ route('auth.register.store') }}" id="registrationForm" class="space-y-6">
                     @csrf
 
@@ -64,17 +63,20 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                                <input type="text" name="prenom" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                                <input type="text" name="prenom" value="{{ old('prenom') }}" required 
+                                       class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                                <input type="text" name="nom" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                                <input type="text" name="nom" value="{{ old('nom') }}" required 
+                                       class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Email professionnel</label>
-                            <input type="email" name="email" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
                         </div>
 
                         <div>
@@ -92,43 +94,46 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Service</label>
-                            <input type="text" name="poste" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                            <input type="text" name="poste" value="{{ old('poste') }}" 
+                                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
                         </div>
                     </div>
 
                     <!-- Step 2: Security -->
                     <div id="step2" class="step-content hidden">
-
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Sécurité du compte et rôle</h3>
-                <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-    <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
-        @foreach($roles as $role)
-            <option value="{{ $role->id }}" {{ isset($user) && $role->id == $user->role_id ? 'selected' : '' }}>
-                {{ $role->libelle }}
-            </option>
-        @endforeach
-    </select>
-</div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                            <div class="relative">
-                                <input type="password" name="password" id="password" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-12">
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center password-toggle" onclick="togglePassword('password')">
-                                    <i class="fas fa-eye text-gray-400"></i>
-                                </div>
-                            </div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+                            <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
+                                        {{ $role->libelle }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
-                        <div>
+                        <div class="relative mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                            <input type="password" name="password" id="password" required
+                                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                                   title="Le mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial"
+                                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-10"
+                                   placeholder="••••••••">
+                            <button type="button" id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <div class="relative mt-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
-                            <div class="relative">
-                                <input type="password" name="password_confirmation" id="confirmPassword" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-12">
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center password-toggle" onclick="togglePassword('confirmPassword')">
-                                    <i class="fas fa-eye text-gray-400"></i>
-                                </div>
-                            </div>
+                            <input type="password" name="password_confirmation" id="password_confirmation" required
+                                   class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-10"
+                                   placeholder="••••••••">
+                            <button type="button" id="toggleConfirmPassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -141,7 +146,7 @@
                             Suivant<i class="fas fa-arrow-right ml-2"></i>
                         </button>
                         <button type="submit" id="submitBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors ml-auto hidden">
-                            Créer mon compte<i class="fas fa-check ml-2"></i>
+                            Créer le compte<i class="fas fa-check ml-2"></i>
                         </button>
                     </div>
                 </form>
@@ -149,8 +154,6 @@
         </div>
     </div>
 </main>
-
-@vite(['resources/js/inscription.js'])
 
 @endsection
 
@@ -182,10 +185,26 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.classList.add('hidden');
     });
 
-    // Interception du submit avec SweetAlert2
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    });
+
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const confirmInput = document.getElementById('password_confirmation');
+    toggleConfirmPassword.addEventListener('click', function() {
+        const type = confirmInput.type === 'password' ? 'text' : 'password';
+        confirmInput.type = type;
+        this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    });
+
+    // Form submit confirmation
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-
         Swal.fire({
             title: 'Êtes-vous sûr ?',
             text: "Voulez-vous vraiment créer ce compte ?",
@@ -202,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Message de succès après redirection
+    // Success alert
     @if(session('success'))
         Swal.fire({
             icon: 'success',

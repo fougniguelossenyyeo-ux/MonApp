@@ -3,6 +3,7 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\EntiteController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -44,5 +45,16 @@ Route::get('/dashboard', [AdminController::class, 'index'])
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit'); // formulaire édition
     Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update'); // mise à jour
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy'); // suppression
+});
+
+//entite
+Route::middleware('auth')->group(function () {
+    
+    Route::get('/entites', [EntiteController::class, 'indexe'])->name('entites.index');       // liste des entites
+    Route::get('/entites/create', [EntiteController::class, 'create'])->name('entites.create'); // formulaire création
+    Route::post('/entites', [EntiteController::class, 'store'])->name('entites.store');      // stockage
+    Route::get('/entites/{entite}/edit', [EntiteController::class, 'edit'])->name('entites.edit'); // formulaire édition
+    Route::put('/entites/{entite}', [EntiteController::class, 'update'])->name('entites.update'); // mise à jour
+    Route::delete('/entites/{entite}', [EntiteController::class, 'destroy'])->name('entites.destroy'); // suppression
 });
 

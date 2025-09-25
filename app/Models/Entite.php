@@ -2,18 +2,17 @@
 
 namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 
-class Role extends Model
+class Entite extends Model
 {
         use HasFactory;
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
-        'libelle',
-         'entite_id',
+        'libelle_entite',
     ];
 
     protected static function booted()
@@ -23,14 +22,5 @@ class Role extends Model
                 $model->id = Str::uuid()->toString();
             }
         });
-    }
-
-    /*public function users()
-    {
-        return $this->hasMany(\App\Models\User::class, 'role_id');
-    } */
-    public function entite()
-    {
-        return $this->belongsTo(Entite::class);
     }
 }

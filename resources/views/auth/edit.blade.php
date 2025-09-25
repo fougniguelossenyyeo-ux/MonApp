@@ -82,34 +82,49 @@
 
                     <!-- Security Information -->
                     <h3 class="text-xl font-semibold text-gray-900 mb-6">Sécurité du compte</h3>
-                       <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-                            <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
-        @foreach($roles as $role)
-            <option value="{{ $role->id }}" {{ isset($user) && $role->id == $user->role_id ? 'selected' : '' }}>
-                {{ $role->libelle }}
-            </option>
-        @endforeach
-    </select>
-                        </div>
-
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe (laisser vide pour ne pas changer)</label>
-                        <input type="password" name="password" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+                        <select name="role_id" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}" {{ $role->id == $user->role_id ? 'selected' : '' }}>
+                                    {{ $role->libelle }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <div>
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe (laisser vide pour ne pas changer)</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="password"
+                            pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" 
+                            title="Le mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial"
+                            class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-10"
+                            placeholder="••••••••"
+                        >
+                        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
-                        <input type="password" name="password_confirmation" class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                        <input 
+                            type="password" 
+                            name="password_confirmation" 
+                            id="password_confirmation"
+                            class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none pr-10"
+                            placeholder="••••••••"
+                        >
                     </div>
 
                     <div class="flex justify-end pt-6">
-                            <!-- Bouton Annuler -->
-                <!-- Bouton Annuler -->
-    <a href="{{ route('users.list') }}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors mr-4">
-        Annuler
-    </a>
+                        <a href="{{ route('users.list') }}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors mr-4">
+                            Annuler
+                        </a>
                         <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                             Modifier ce compte <i class="fas fa-check ml-2"></i>
                         </button>
@@ -122,6 +137,7 @@
 </main>
 
 @endsection
+
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -134,7 +150,18 @@ document.addEventListener('DOMContentLoaded', function() {
             showConfirmButton: false
         });
     @endif
+
+    // Toggle password
+    const togglePassword = document.querySelector('#togglePassword');
+    const passwordInput = document.querySelector('#password');
+
+    togglePassword.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.innerHTML = type === 'password' 
+            ? '<i class="fas fa-eye"></i>' 
+            : '<i class="fas fa-eye-slash"></i>';
+    });
 });
 </script>
 @endsection
-    

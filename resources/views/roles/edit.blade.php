@@ -1,54 +1,68 @@
 @extends('layouts.template')
 @section('maincontent')
 @include('layouts.Adminheader')
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Breadcrumbs -->
-           
 
-            <!-- Formulaire de création de rôle -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">Création d'un nouveau rôle</h2>
-                    <p class="text-gray-600 mt-1">Remplissez le formulaire ci-dessous pour créer un nouveau rôle dans le système.</p>
-                </div>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                <form action="{{route('roles.update', $role->id)}}" method="POST" id="roleForm" class="space-y-6">
-                    @csrf
-                    @method('PUT')
-                    <div>
-                        <label for="roleName" class="block text-sm font-medium text-gray-700 mb-2">
-                            Libellé du rôle <span class="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            id="roleName" 
-                            name="libelle" 
-                            required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                            value="{{old('libelle',$role->libelle)}}"
-                            required
-                        >
-                        <p class="mt-1 text-sm text-gray-500">Entrez le nom du rôle à créer</p>
-                    </div>
+    <!-- Formulaire de modification de rôle -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">Modifier un rôle</h2>
+            <p class="text-gray-600 mt-1">Mettez à jour les informations du rôle ci-dessous.</p>
+        </div>
 
-                    <div class="flex items-center justify-end space-x-4 pt-4">
-                        <a href="{{route('roles.index')}}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                            Annuler
-                        </a>
-                        <button 
-                            type="submit" 
-                            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors flex items-center"
-                        >
-                            <i class="fas fa-plus-circle mr-2"></i>
-                            Modifier le rôle
-                        </button>
-                    </div>
-                </form>
+        <form action="{{ route('roles.update', $role->id) }}" method="POST" id="roleForm" class="space-y-6">
+            @csrf
+            @method('PUT')
+
+            <!-- Libellé du rôle -->
+            <div>
+                <label for="roleName" class="block text-sm font-medium text-gray-700 mb-2">
+                    Libellé du rôle <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="roleName" 
+                    name="libelle" 
+                    value="{{ old('libelle', $role->libelle) }}"
+                    required
+                    class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    placeholder="Ex: Administrateur, Caissier, Contrôleur..."
+                >
             </div>
-        </main>
 
+            <!-- Sélection de l'entité -->
+            <div>
+           <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+<select name="role_id" required class="form-input w-1/2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+    @foreach($roles as $role)
+        <option value="{{ $role->id }}" {{ $role->id == $user->role_id ? 'selected' : '' }}>
+            {{ $role->libelle }}
+        </option>
+    @endforeach
+</select>
+
+            </div>
+
+            <!-- Boutons -->
+            <div class="flex items-center justify-end space-x-4 pt-4">
+                <a href="{{ route('roles.index') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Annuler
+                </a>
+                <button 
+                    type="submit" 
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors flex items-center"
+                >
+                    <i class="fas fa-edit mr-2"></i>
+                    Modifier le rôle
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
 
 @endsection
+
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -64,4 +78,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-    

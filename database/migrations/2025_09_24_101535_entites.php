@@ -9,17 +9,12 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+  public function up(): void
     {
-         Schema::create('roles', function (Blueprint $table) {
+         Schema::create('entites', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('libelle');
-            $table->string('entite_id');
+            $table->string('libelle_entite');
             $table->timestamps();
-        });
-         Schema::table('roles', function (Blueprint $table) {
-            $table->foreign('entite_id')->references('id')->on('entites')->onDelete('cascade');
-         
         });
     }
 
@@ -28,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('entites');
     }
 };
