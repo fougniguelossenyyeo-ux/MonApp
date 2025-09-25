@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('demandes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            
+            $table->string('reference_dp');
             $table->string('denomination');
             $table->uuid('entite_id');
             $table->decimal('montant_paiement_fournisseur', 15, 2);
@@ -34,13 +34,13 @@ return new class extends Migration
 
             $table->tinyInteger('status')->default(0); 
             // 0 = créé, 1 = validé par Contrôleur, 2 = validé par DAF, 3 = validé par DG, -1 = refusé
-            $table->uuid('created_by'); 
-            $table->timestamp('rejected_at')->nullable();
+            $table->uuid('user_id'); 
+           
 
             $table->timestamps();
 
             $table->foreign('entite_id')->references('id')->on('entites')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }  
 

@@ -28,7 +28,7 @@
                     <i class="fas fa-home mr-3"></i>
                     <span id="dashboardText">Tableau de bord</span>
                 </a>
-                <a href="formulaireDP.html" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg tooltip" data-tooltip="Enregistrer DP">
+                <a href="{{route('demandes.create')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg tooltip" data-tooltip="Enregistrer DP">
                     <i class="fas fa-plus-circle mr-3"></i>
                     <span id="registerText">Enregistrer   DP</span>
                 </a>
@@ -36,7 +36,7 @@
                     <i class="fas fa-money-bill-wave mr-3"></i>
                     <span id="paymentText">Faire un paiement</span>
                 </a>
-                <a href="demandesDP.html" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg tooltip" data-tooltip="Demandes">
+                <a href="{{route('demandes.index')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg tooltip" data-tooltip="Demandes">
                     <i class="fas fa-chart-bar mr-3"></i>
                     <span id="requestsText">Demandes</span>
                 </a>

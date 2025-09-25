@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\EntiteController;
+use App\Http\Controllers\DemandeController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -58,3 +59,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/entites/{entite}', [EntiteController::class, 'destroy'])->name('entites.destroy'); // suppression
 });
 
+
+
+// Liste des demandes
+Route::get('/demandes', [DemandeController::class, 'index'])->name('demandes.index');
+// Route pour afficher le formulaire de création de DP
+Route::get('/demandes/create', [DemandeController::class, 'create'])->name('demandes.create');
+// Route pour enregistrer une nouvelle demande
+Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
