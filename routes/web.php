@@ -61,9 +61,15 @@ Route::middleware('auth')->group(function () {
 
 
 
-// Liste des demandes
+
+Route::middleware('auth')->group(function () {
+    
+  // Liste des demandes
 Route::get('/demandes', [DemandeController::class, 'index'])->name('demandes.index');
 // Route pour afficher le formulaire de création de DP
 Route::get('/demandes/create', [DemandeController::class, 'create'])->name('demandes.create');
 // Route pour enregistrer une nouvelle demande
 Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
+Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
+ 
+});

@@ -41,6 +41,12 @@ class Demande extends Model
         'status',
         'user_id',
     ];
+      // Casts pour transformer les dates en objets Carbon
+    protected $casts = [
+        'date_paiement' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     // Relations
     public function entite()

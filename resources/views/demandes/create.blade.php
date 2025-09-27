@@ -61,7 +61,7 @@
 
         <!-- Form Section -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-            <form method="POST" action="{{ route('demandes.store') }}" id="dpForm" enctype="multipart/form-data">
+            <form  action="{{ route('demandes.store') }}" method="POST" id="dpForm" enctype="multipart/form-data">
                 @csrf
 
                 <!-- Step 1: Informations de base -->
@@ -184,7 +184,7 @@
                                     <span class="ml-2 text-gray-700">Urgent</span>
                                 </label>
                                 <label class="inline-flex items-center px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100">
-                                    <input type="radio" name="priorite" value="très_urgent" class="text-indigo-600 focus:ring-indigo-500">
+                                    <input type="radio" name="priorite" value="tres_urgent" class="text-indigo-600 focus:ring-indigo-500">
                                     <span class="ml-2 text-gray-700">Très Urgent</span>
                                 </label>
                             </div>
@@ -194,9 +194,9 @@
 
                 <!-- Step 3: Pièces jointes -->
                 <div class="form-step hidden mt-8">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Pièces jointes</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Pièces jointes maximum 20MB</h2>
                     <div class="flex items-center">
-                        <input type="file" name="fichiers[]" id="fileInput" multiple class="hidden">
+                        <input type="file" name="pieces_jointes[]" id="fileInput" multiple class="hidden" accept="application/pdf">
                         <button type="button" id="fileButton"
                             class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
                             <i class="fas fa-upload mr-2"></i> Choisir des fichiers
