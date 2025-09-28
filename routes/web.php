@@ -70,6 +70,16 @@ Route::get('/demandes', [DemandeController::class, 'index'])->name('demandes.ind
 Route::get('/demandes/create', [DemandeController::class, 'create'])->name('demandes.create');
 // Route pour enregistrer une nouvelle demande
 Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
+Route::get('/demandes/en-attente-controleur', [DemandeController::class, 'enAttenteControl'])->name('demandes.enAttenteControl');
 Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
+Route::get('demandes/en-attente-controleur/{id}', [DemandeController::class, 'showEnAttenteControl'])->name('demandes.show_enattente');
+// Pour le contrôleur
+Route::post('/demandes/{id}/valider-controleur', [DemandeController::class, 'validerControleur'])->name('demandes.validerControleur');
+Route::post('/demandes/{id}/refuser-controleur', [DemandeController::class, 'refuserControleur'])->name('demandes.refuserControleur');
+
+
+
+
+
  
 });

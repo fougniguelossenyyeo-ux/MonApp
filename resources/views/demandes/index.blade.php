@@ -75,70 +75,80 @@
     </div>
 
     <!-- Grille des cartes dynamiques -->
-    <!-- Grille des cartes dynamiques -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+<!-- Grille des cartes dynamiques -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
     @forelse($demandes as $a)
-        <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-            <div class="p-4">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $a->reference_dp }}</h3>
-                        <p class="text-xs text-gray-500 mt-1">{{ $a->date_paiement?->format('d/m/Y') }}</p>
-                   @php
-    $statusText = match($a->status) {
-        0  => "En attente de validation du Contrôleur ",
-        1  => "En attente de validation du DAF ",
-        2 => "En attente de validation du DG ",
-        3  => "Validé",
-        -1 => "Refusé par le Contrôleur ",
-        -2 => "Refusé par le DAF ",
-        -3 => "Refusé par le DG ",
-        default => "Statut inconnu",
-    };
+        <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="p-4 flex-1 flex flex-col justify-between">
+                <!-- Header carte -->
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $a->reference_dp }}</h3>
+                            <p class="text-xs text-gray-500 mt-1">{{ $a->date_paiement?->format('d/m/Y') }}</p>
+                        </div>
+                    </div>
 
-    // Couleur du badge
-    $badgeColor = match($a->status) {
-        0,1,2, => "bg-yellow-50 text-yellow-700",
-        3     => "bg-green-50 text-green-700",
-        -1,-2,-3 => "bg-red-50 text-red-700",
-        default => "bg-gray-50 text-gray-700",
-    };
-@endphp
+                    <!-- Statut -->
+                    @php
+                        $statusText = match($a->status) {
+                            0  => "En attente de validation du Contrôleur",
+                            1  => "En attente de validation du DAF",
+                            2  => "En attente de validation du DG",
+                            3  => "Validé",
+                            -1 => "Refusé par le Contrôleur",
+                            -2 => "Refusé par le DAF",
+                            -3 => "Refusé par le DG",
+                            default => "Statut inconnu",
+                        };
 
-<span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded">
-   <b> {{ $statusText }}</b>
-</span>
+                        $badgeColor = match($a->status) {
+                            0,1,2 => "bg-yellow-50 text-yellow-700",
+                            3     => "bg-green-50 text-green-700",
+                            -1,-2,-3 => "bg-red-50 text-red-700",
+                            default => "bg-gray-50 text-gray-700",
+                        };
+                    @endphp
 
+                    <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded inline-block mb-2">
+                        <b>{{ $statusText }}</b>
+                    </span>
 
-                <div class="mb-3">
-                    <p class="text-gray-700 text-sm font-medium truncate">{{ $a->denomination }}</p>
-                    <div class="flex space-x-1 mt-1">
-                        <span class="entity-badge bg-slate-100 text-slate-700 inline-block text-xs px-2 py-1 rounded">
-                            {{ $a->entite?->libelle_entite??'non definie' }}
-                        </span>
+                    <!-- Dénomination & Entité -->
+                    <div class="mb-3">
+                        <p class="text-gray-700 text-sm font-medium truncate">{{ $a->denomination }}</p>
+                        <div class="flex space-x-1 mt-1">
+                            <span class="entity-badge bg-slate-100 text-slate-700 inline-block text-xs px-2 py-1 rounded">
+                                {{ $a->entite?->libelle_entite ?? 'non définie' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Montant & Date création -->
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <p class="text-xs text-gray-500">Montant</p>
+                            <p class="text-sm font-semibold text-gray-900">{{ number_format($a->montant_paiement_fournisseur, 0, ',', ' ') }} F CFA</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Créé le</p>
+                            <p class="text-xs font-medium text-gray-900">{{ $a->created_at?->format('d/m/Y H:i') }}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center mb-3">
-                    <div>
-                        <p class="text-xs text-gray-500">Montant</p>
-                        <p class="text-sm font-semibold text-gray-900">{{ number_format($a->montant_paiement_fournisseur, 0, ',', ' ') }} F CFA</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500">Créé le</p>
-                        <p class="text-xs font-medium text-gray-900">{{ $a->created_at?->format('d/m/Y H:i') }}</p>
-                    </div>
+                <!-- Description -->
+                <div class="border-t border-gray-100 pt-3 mt-3 flex-1">
+                    <p class="text-xs text-gray-600 line-clamp-3">{{ $a->description }}</p>
                 </div>
 
-                <div class="border-t border-gray-100 pt-3">
-                    <p class="text-xs text-gray-600 line-clamp-2">{{ $a->description }}</p>
-                </div>
-
-                <div class="mt-3 flex justify-between items-center">
-                    <span class="text-xs text-gray-500">Date de création : {{ $a->create_at?->format('d/m/Y H:i') }}</span>
+                <!-- Footer carte -->
+                <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
+                    <span class="text-xs text-gray-500">Date de création : {{ $a->created_at?->format('d/m/Y H:i') }}</span>
                     <div class="flex space-x-2">
-                        <a href="{{route('demandes.show',$a->id)}}" class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium" 
-                               >Voir détails</a>
+                        <a href="{{ route('demandes.show', $a->id) }}" class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                            Voir détails
+                        </a>
                     </div>
                 </div>
             </div>
@@ -158,6 +168,8 @@
 
 <!-- Pagination Laravel -->
 <div class="mt-6">
+   
+
     {{ $demandes->links() }}
 </div>
 

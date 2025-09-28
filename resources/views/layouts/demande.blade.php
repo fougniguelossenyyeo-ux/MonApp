@@ -6,11 +6,11 @@
                         <div class="text-2xl font-bold mt-1">24</div>
                         <div class="text-xs opacity-75 mt-1">Total cette année</div>
                       </a>
-                    <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+                    <a href="{{route('demandes.enAttenteControl')}}"" class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
                         <div class="text-sm font-medium opacity-90">En attente Controller</div>
                         <div class="text-2xl font-bold mt-1">8</div>
                         <div class="text-xs opacity-75 mt-1">En cours de validation</div>
-                    </div>
+                    </a>
                     <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
                         <div class="text-sm font-medium opacity-90">En attente DAF</div>
                         <div class="text-2xl font-bold mt-1">5</div>

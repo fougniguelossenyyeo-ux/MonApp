@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NouvelleDemandeDP; // ou DemandePaiementMail selon le nom que tu as donné
 
 class DemandeController extends Controller
 {
@@ -20,7 +22,7 @@ class DemandeController extends Controller
         // On récupère les demandes avec les relations entite et user
         $demandes = Demande::with(['entite', 'user'])
             ->orderByDesc('created_at')
-            ->paginate(10); // Pagination 10 par page
+            ->paginate(12); // Pagination 10 par page
 
         // On retourne la vue avec les demandes
         return view('demandes.index', compact('demandes'));
@@ -95,11 +97,17 @@ class DemandeController extends Controller
 
     $validated['pieces_jointes'] = $mergedFileName;
 }
+  $demande = Demande::create($validated);
 
     // Création de la demande
-    $demande = Demande::create($validated);
+$controleurs = User::whereHas('role', function($q) use ($demande) {
+    $q->where('libelle', 'controleur');
+})->get();
 
-    // Debug pour vérifier l'insertion
+foreach($controleurs as $user) {
+    Mail::to($user->email)->send(new NouvelleDemandeDP($demande, $controleurs));
+}
+
 
 
     return redirect()->route('demandes.index')
@@ -122,10 +130,51 @@ public function show(Demande $demande)
     return view('demandes.show', compact('demande', 'piece'));
 }
     /**
-     * Formulaire d’édition
+     * en attente controlleur
      */
    
-    
+public function enattenteControl()
+{
+    $demandes = Demande::where('status', 0)
+        ->orderBy('created_at', 'desc')
+        ->paginate(12);
+
+    return view('demandes.controleur', compact('demandes'));
 
    
+}
+public function showEnAttenteControl($id)
+{
+    // On récupère uniquement une demande avec statut = 0
+    $demande = Demande::where('status', 0)->findOrFail($id);
+
+    return view('demandes.show_enattente', compact('demande'));
+}
+public function validerControleur($id)
+{
+    $demande = Demande::findOrFail($id);
+
+    // Mettre le statut à 1 (envoyé au DAF)
+    $demande->status = 1;
+    $demande->save();
+
+    // Retourner sur la liste des demandes en attente du contrôleur
+    return redirect()->route('demandes.enAttenteControl')
+                     ->with('success', 'La demande a été validée et envoyée au DAF.');
+}
+
+public function refuserControleur($id)
+{
+    $demande = Demande::findOrFail($id);
+
+    // Mettre le statut à -1 (refusé par le contrôleur)
+    $demande->status = -1;
+    $demande->save();
+
+    // Retourner sur la liste des demandes en attente du contrôleur
+    return redirect()->route('demandes.enAttenteControl')
+                     ->with('error', 'La demande a été refusée.');
+}
+
+
 }

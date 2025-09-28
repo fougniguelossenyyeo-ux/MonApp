@@ -23,4 +23,8 @@ class Entite extends Model
             }
         });
     }
+        public function users()
+{
+    return $this->hasMany(User::class, 'entite_id', 'id');
+}
 }

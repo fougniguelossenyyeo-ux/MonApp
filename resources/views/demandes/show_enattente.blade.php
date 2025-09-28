@@ -2,7 +2,29 @@
     @section('maincontent')
     @include('layouts.demande')
             <!-- Main Content -->
+@if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: '{{ session('success') }}',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'OK'
+        });
+    </script>
+@endif
 
+@if(session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: '{{ session('error') }}',
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Fermer'
+        });
+    </script>
+@endif
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -167,17 +189,43 @@
         <iframe id="pieceViewer" src="" class="w-full h-full"></iframe>
     </div>
 </div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Actions</h3>
+        <!-- Bouton Refuser -->
+   <div class="flex space-x-4 mt-4">
+    <!-- Bouton Refuser -->
+    <form action="{{ route('demandes.refuserControleur', $demande->id) }}" method="POST" class="flex-1">
+        @csrf
+        <button type="submit" class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
+            Refuser
+        </button>
+    </form>
 
+    <!-- Bouton Accepter -->
+    <form action="{{ route('demandes.validerControleur', $demande->id) }}" method="POST" class="flex-1">
+        @csrf
+        <button type="submit" class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+            Accepter
+        </button>
+    </form>
+</div>
 
-
-    <!-- Action Buttons -->
-    <!-- Bouton Retour à la liste -->
+<!-- Bouton Retour -->
 <div class="mt-6">
-    <a href="{{ route('demandes.index') }}" 
+    <a href="{{ route('demandes.enAttenteControl') }}" 
        class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold">
          Retour à la liste
     </a>
 </div>
+</div>
+
+    </div>
+    
+</div>
+
+
+    <!-- Action Buttons -->
+    
         <!-- Comment Section for Rejection -->
         <div id="rejectCommentSection" class="mt-6 hidden">
             <label for="rejectComment" class="block text-sm font-medium text-gray-700 mb-2">Motif du refus</label>
