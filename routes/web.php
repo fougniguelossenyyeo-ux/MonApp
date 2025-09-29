@@ -70,12 +70,36 @@ Route::get('/demandes', [DemandeController::class, 'index'])->name('demandes.ind
 Route::get('/demandes/create', [DemandeController::class, 'create'])->name('demandes.create');
 // Route pour enregistrer une nouvelle demande
 Route::post('/demandes', [DemandeController::class, 'store'])->name('demandes.store');
+// Liste des demandes en attente DAF
+Route::get('/demandes/en-attente-daf', [DemandeController::class, 'enAttenteDaf'])->name('demandes.enAttenteDaf');
+// Liste des demandes en attente Directeur
+Route::get('/demandes/en-attente-directeur', [DemandeController::class, 'enAttenteDirecteur'])->name('demandes.enAttenteDirecteur');
+// Route pour afficher les demandes validées par le DG
+Route::get('/demandes/valider', [DemandeController::class, 'valider'])->name('demandes.valider');
+// Pour afficher une demande validée
+Route::get('/demandes/valider/{id}', [DemandeController::class, 'showValider'])->name('demandes.showValider');
+
+// Détail d’une demande Directeur
+Route::get('/demandes/en-attente-directeur/{id}', [DemandeController::class, 'showEnAttenteDirecteur'])->name('demandes.showEnAttenteDirecteur');
+
+// Actions Directeur
+Route::post('/demandes/valider-directeur/{id}', [DemandeController::class, 'validerDirecteur'])->name('demandes.validerDirecteur');
+Route::post('/demandes/refuser-directeur/{id}', [DemandeController::class, 'refuserDirecteur'])->name('demandes.refuserDirecteur');
+
+
+// Détail d'une demande précise
+Route::get('/demandes/en-attente-daf/{id}', [DemandeController::class, 'showEnAttenteDaf'])->name('demandes.showEnAttenteDaf');
+Route::post('/demandes/valider-daf/{id}', [DemandeController::class, 'validerDaf'])->name('demandes.validerDaf');
+Route::post('/demandes/refuser-daf/{id}', [DemandeController::class, 'refuserDaf'])->name('demandes.refuserDaf');
+
 Route::get('/demandes/en-attente-controleur', [DemandeController::class, 'enAttenteControl'])->name('demandes.enAttenteControl');
 Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
 Route::get('demandes/en-attente-controleur/{id}', [DemandeController::class, 'showEnAttenteControl'])->name('demandes.show_enattente');
 // Pour le contrôleur
 Route::post('/demandes/{id}/valider-controleur', [DemandeController::class, 'validerControleur'])->name('demandes.validerControleur');
 Route::post('/demandes/{id}/refuser-controleur', [DemandeController::class, 'refuserControleur'])->name('demandes.refuserControleur');
+
+
 
 
 

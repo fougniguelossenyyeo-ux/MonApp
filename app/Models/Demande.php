@@ -18,29 +18,32 @@ class Demande extends Model
     public $incrementing = false;
 
     // Champs qui peuvent être remplis en masse (mass assignable)
-    protected $fillable = [
-        'denomination',
-        'entite_id',
-        'reference_dp',
-        'montant_paiement_fournisseur',
-        'date_paiement',
-        'contact_fournisseur',
-        'adresse_fournisseur',
-        'email_fournisseur',
-        'reference_facture',
-        'reference_bon_commande',
-        'reference_contrat',
-        'reference_expression_besoin',
-        'code_fournisseur',
-        'description',
-        'code_analytique',
-        'centre_analytique',
-        'code_projet',
-        'priorite',
-        'pieces_jointes',
-        'status',
-        'user_id',
-    ];
+  protected $fillable = [
+    'denomination',
+    'entite_id',
+    'reference_dp',
+    'montant_ht', // nouveau
+    'tva',        // nouveau
+    'montant_paiement_fournisseur',
+    'date_paiement',
+    'contact_fournisseur',
+    'adresse_fournisseur',
+    'email_fournisseur',
+    'reference_facture',
+    'reference_bon_commande',
+    'reference_contrat',
+    'reference_expression_besoin',
+    'code_fournisseur',
+    'description',
+    'code_analytique',
+    'centre_analytique',
+    'code_projet',
+    'priorite',
+    'pieces_jointes',
+    'status',
+    'user_id',
+];
+
       // Casts pour transformer les dates en objets Carbon
     protected $casts = [
         'date_paiement' => 'date',

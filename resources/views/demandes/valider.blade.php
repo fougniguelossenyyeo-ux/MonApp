@@ -8,12 +8,12 @@
     <!-- En-tête de page -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-            <p class="text-gray-600 mt-1">Historique complet des demandes de paiement en attente du Directeur</p>
+            <p class="text-gray-600 mt-1">Historique complet des demandes de paiement validées</p>
         </div>
         <div class="mt-4 md:mt-0">
             <div class="flex items-center space-x-4">
                 <div class="text-sm text-gray-600">
-                    <span id="archiveCount">{{ $demandes->total() }}</span> demandes en attente
+                    <span id="validatedCount">{{ $demandes->total() }}</span> demandes validées
                 </div>
             </div>
         </div>
@@ -77,37 +77,21 @@
     <!-- Grille des cartes -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
         @forelse($demandes as $demande)
-            <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
                 <div class="p-4 flex-1 flex flex-col justify-between">
-                    
                     <!-- Header -->
                     <div>
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $demande->reference_dp }}</h3>
-                                <p class="text-xs text-gray-500 mt-1"> Délai :{{ $demande->date_paiement?->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Délai: {{ $demande->date_paiement?->format('d/m/Y') }}</p>
                             </div>
                         </div>
 
                         <!-- Statut -->
                         @php
-                            $statusText = match($demande->status) {
-                                0  => "En attente de validation du Contrôleur",
-                                1  => "En attente de validation du DAF",
-                                2  => "En attente de validation du Directeur",
-                                3  => "Validé",
-                                -1 => "Refusé par le Contrôleur",
-                                -2 => "Refusé par le DAF",
-                                -3 => "Refusé par le Directeur",
-                                default => "Statut inconnu",
-                            };
-
-                            $badgeColor = match($demande->status) {
-                                0,1,2 => "bg-yellow-50 text-yellow-700",
-                                3     => "bg-green-50 text-green-700",
-                                -1,-2,-3 => "bg-red-50 text-red-700",
-                                default => "bg-gray-50 text-gray-700",
-                            };
+                            $statusText = "Validé";
+                            $badgeColor = "bg-green-50 text-green-700";
                         @endphp
 
                         <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded inline-block mb-2">
@@ -146,9 +130,9 @@
 
                     <!-- Footer -->
                     <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
-                        <span class="text-xs text-gray-500">Date de création : {{ $demande->created_at?->format('d/m/Y H:i') }}</span>
+                        <span class="text-xs text-gray-500">Date de validation : {{ $demande->updated_at?->format('d/m/Y H:i') }}</span>
                         <div class="flex space-x-2">
-                            <a href="{{ route('demandes.showEnAttenteDirecteur', $demande->id) }}" 
+                            <a href="{{ route('demandes.showValider', $demande->id) }}" 
                                class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
                                 Voir détails
                             </a>
@@ -158,13 +142,8 @@
             </div>
         @empty
             <div class="col-span-4 text-center py-12">
-                <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune demande trouvée</h3>
-                <p class="text-gray-500">Il n’y a actuellement aucune demande en attente de validation du Directeur.</p>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune demande validée</h3>
+                <p class="text-gray-500">Il n’y a actuellement aucune demande validée par le Directeur.</p>
             </div>
         @endforelse
     </div>
@@ -175,14 +154,24 @@
     </div>
 </main>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Boutons "Voir détails" redirigent simplement vers la page de détail
+    const viewDetailBtns = document.querySelectorAll('.view-details-btn');
+    viewDetailBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = this.getAttribute('href');
+        });
+    });
 
-document.getElementById('closeModal').addEventListener('click', () => {
-    document.getElementById('detailModal').classList.add('hidden');
-    document.body.style.overflow='';
-});
-document.getElementById('closeDetailModal').addEventListener('click', () => {
-    document.getElementById('detailModal').classList.add('hidden');
-    document.body.style.overflow='';
+    // Boutons pour visualiser les fichiers joints
+    const viewFileBtns = document.querySelectorAll('.view-file-btn');
+    viewFileBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const file = this.dataset.file;
+            window.open(file, '_blank');
+        });
+    });
 });
 </script>
 

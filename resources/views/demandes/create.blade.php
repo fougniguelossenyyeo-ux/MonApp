@@ -87,12 +87,19 @@
                                 @endforeach
                             </select>
                         </div>
-                        <!-- Montant -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Montant Demandé (FCFA)</label>
-                            <input type="number" name="montant_paiement_fournisseur" id="amount" value="0" min="0"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                        </div>
+                     <!-- Montant HT -->
+                    <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Montant HT (FCFA)</label>
+                   <input type="number" name="montant_ht" id="amount_ht" value="0" min="0"
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                           </div>
+
+<!-- TVA -->
+                   <div>
+                       <label class="block text-sm font-medium text-gray-700 mb-2">TVA (%)</label>
+                   <input type="number" name="tva" id="tva" value="0" min="0" step="0.01"
+                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                       </div>
                         <!-- Date de paiement -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Date de paiement souhaitée</label>
@@ -233,6 +240,9 @@
     </main>
 </div>
 
+<!-- Champ caché pour stocker le TTC -->
+<input type="hidden" name="montant_ttc" id="hiddenTTC" value="0">
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const dpForm = document.getElementById('dpForm');
@@ -280,10 +290,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function updateReview() {
+        const montantHT = parseFloat(document.getElementById('amount_ht').value) || 0;
+        const tvaPourcentage = parseFloat(document.getElementById('tva').value) || 0;
+
+        // Calcul TTC pour la base de données (champ caché)
+        const ttc = montantHT + (montantHT * tvaPourcentage / 100);
+        document.getElementById('hiddenTTC').value = ttc.toFixed(2);
+
         const data = {
             'Dénomination': document.getElementById('requester').value,
             'Entité': document.getElementById('entity').selectedOptions[0]?.text,
-            'Montant TTC': document.getElementById('amount').value + ' F CFA',
+            'Montant HT': montantHT.toFixed(2) + ' F CFA',
+            'TVA (%)': tvaPourcentage.toFixed(2) + ' %',
             'Date de paiement': document.getElementById('paymentDate').value,
             'Adresse': document.getElementById('address').value,
             'Email': document.getElementById('email').value,
@@ -299,8 +317,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Code Projet': document.getElementById('project_code').value,
             'Fichiers joints': Array.from(fileInput.files).map(f => f.name).join(', ') || 'Aucun fichier'
         };
+
         reviewSection.innerHTML = '<tbody>';
-        for(const key in data) {
+        for (const key in data) {
             reviewSection.innerHTML += `
                 <tr class="border-b border-gray-200">
                     <td class="px-6 py-4 font-medium text-gray-700 w-1/2">${key}</td>
@@ -312,4 +331,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
 @endsection

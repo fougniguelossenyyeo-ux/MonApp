@@ -9,11 +9,12 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-  public function up(): void
+    public function up(): void
     {
-         Schema::create('entites', function (Blueprint $table) {
+        Schema::create('entites', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('libelle_entite');
+            $table->string('logo')->nullable(); // nouveau champ pour le logo
             $table->timestamps();
         });
     }

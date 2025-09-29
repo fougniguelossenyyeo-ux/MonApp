@@ -33,4 +33,8 @@ class Role extends Model
     {
         return $this->belongsTo(Entite::class);
     }
+    public function users()
+{
+    return $this->hasMany(User::class,'role_id');
+}
 }

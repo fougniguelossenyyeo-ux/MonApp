@@ -4,15 +4,15 @@
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Liste des rôles -->
+    <!-- Liste des entités -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
                 <h2 class="text-xl font-semibold text-gray-900">Liste des entités</h2>
-                <p class="text-gray-600 mt-1">Gérez les Entite disponibles dans le système</p>
+                <p class="text-gray-600 mt-1">Gérez les entités disponibles dans le système</p>
             </div>
             <div class="mt-4 md:mt-0">
-                <a href="{{route('entites.create')}}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                <a href="{{ route('entites.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
                     <i class="fas fa-plus mr-2"></i>
                     Ajouter une entité
                 </a>
@@ -24,23 +24,30 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entité</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre d'utilisateurs</th>
-                
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Logo</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($entites as $entite)
                     <tr>
+                        <!-- Libellé -->
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">{{ $entite->libelle_entite }}</div>
                         </td>
+
+                        <!-- Logo -->
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                1 utilisateur
-                            </span>
+                            @if($entite->logo)
+                                <img src="{{ asset('storage/' . $entite->logo) }}" 
+                                     alt="Logo {{ $entite->libelle_entite }}" 
+                                     class="h-12 w-12 object-contain rounded border border-gray-200 shadow-sm">
+                            @else
+                                <span class="text-gray-400 italic text-sm">Aucun logo</span>
+                            @endif
                         </td>
-                      
+
+                        <!-- Actions -->
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
                                 <!-- Bouton Modifier -->
@@ -95,10 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             e.preventDefault(); 
             
-            let roleName = form.getAttribute('data-role'); // récupère le nom du rôle
+            let roleName = form.getAttribute('data-role'); 
             Swal.fire({
                 title: 'Êtes-vous sûr ?',
-                text: "Le rôle « " + roleName + " » sera définitivement supprimé.",
+                text: "L'entité « " + roleName + " » sera définitivement supprimée.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#e3342f',

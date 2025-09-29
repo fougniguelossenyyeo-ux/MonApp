@@ -28,7 +28,7 @@ class NouvelleDemandeDP extends Mailable
      */
     public function build()
 {
-    $subject = "DPaie-{$this->demande->denomination}-{$this->demande->reference_dp}-{$this->demande->entite->nom}";
+    $subject = "DPaie-{$this->demande->denomination}-{$this->demande->reference_dp}-{$this->demande->entite->libelle_entite}";
 
     return $this->view('emails.nouvelle_demande_dp')
                 ->subject($subject)

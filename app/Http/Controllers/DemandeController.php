@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NouvelleDemandeDP; // ou DemandePaiementMail selon le nom que tu as donné
-
+use App\Mail\NotificationDAF;
+ 
 class DemandeController extends Controller
 {
     /**
@@ -42,77 +43,81 @@ class DemandeController extends Controller
     /**
      * Enregistrer une demande
      */
-    public function store(Request $request)
-    { 
-        $validated = $request->validate([
-            'denomination' => 'required|string|max:255',
-            'entite_id' => 'required|uuid|exists:entites,id',
-            'montant_paiement_fournisseur' => 'required|numeric|min:0',
-            'date_paiement' => 'required|date',
-            'contact_fournisseur' => 'required|string|max:20',
-            'adresse_fournisseur' => 'required|string',
-            'email_fournisseur' => 'required|email',
-            'reference_facture' => 'nullable|string|max:255',
-            'reference_bon_commande' => 'nullable|string|max:255',
-            'reference_contrat' => 'nullable|string|max:255',
-            'reference_expression_besoin' => 'nullable|string|max:255',
-            'code_fournisseur' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'code_analytique' => 'nullable|string|max:255',
-            'centre_analytique' => 'nullable|string|max:255',
-            'code_projet' => 'nullable|string|max:255',
-            'priorite' => 'nullable|string|in:normal,urgent,tres_urgent',
-            
-            'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:20480', // max MB
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'denomination' => 'required|string|max:255',
+        'entite_id' => 'required|uuid|exists:entites,id',
+        'montant_ht' => 'required|numeric|min:0',
+        'tva' => 'required|numeric|min:0',
+        'date_paiement' => 'required|date',
+        'contact_fournisseur' => 'required|string|max:20',
+        'adresse_fournisseur' => 'required|string',
+        'email_fournisseur' => 'required|email',
+        'reference_facture' => 'nullable|string|max:255',
+        'reference_bon_commande' => 'nullable|string|max:255',
+        'reference_contrat' => 'nullable|string|max:255',
+        'reference_expression_besoin' => 'nullable|string|max:255',
+        'code_fournisseur' => 'nullable|string|max:255',
+        'description' => 'nullable|string',
+        'code_analytique' => 'nullable|string|max:255',
+        'centre_analytique' => 'nullable|string|max:255',
+        'code_projet' => 'nullable|string|max:255',
+        'priorite' => 'nullable|string|in:normal,urgent,tres_urgent',
+        'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:20480',
+    ]);
 
-     // Génération du code DP
+    // Calcul du montant TTC
+    $montantHT = $validated['montant_ht'];
+    $tva = $validated['tva'];
+    $validated['montant_paiement_fournisseur'] = $montantHT + ($montantHT * $tva / 100);
+
+    // Génération du code DP
     $validated['reference_dp'] = 'DP-CI' . date('dmY') . '-' . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
     $validated['user_id'] = auth()->id();
-    // Statut initial et user_id
     $validated['status'] = 0;
-    $validated['user_id'] = auth()->id(); // si l'utilisateur est connecté
 
-    // Gestion des fichiers joints
+    // Gestion des fichiers joints (FPDI)
     if ($request->hasFile('pieces_jointes')) {
-    // Créer un nom basé sur la dénomination + date
-    $denomination = preg_replace('/[^A-Za-z0-9\-]/', '_', $request->denomination); // sécurise le nom
-    $date = date('d-m-Y'); // date actuelle
-    $mergedFileName = 'pieces_jointes/' . $denomination . '_' . $date . '.pdf';
-    $mergedFilePath = storage_path('app/public/' . $mergedFileName);
+        $denomination = preg_replace('/[^A-Za-z0-9\-]/', '_', $request->denomination);
+        $date = date('d-m-Y');
+        $mergedFileName = 'pieces_jointes/' . $denomination . '_' . $date . '.pdf';
+        $mergedFilePath = storage_path('app/public/' . $mergedFileName);
 
-    $pdf = new Fpdi();
-
-    foreach ($request->file('pieces_jointes') as $file) {
-        $pageCount = $pdf->setSourceFile($file->getPathname());
-        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-            $tpl = $pdf->importPage($pageNo);
-            $size = $pdf->getTemplateSize($tpl);
-            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $pdf->useTemplate($tpl);
+        $pdf = new \setasign\Fpdi\Fpdi();
+        foreach ($request->file('pieces_jointes') as $file) {
+            $pageCount = $pdf->setSourceFile($file->getPathname());
+            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                $tpl = $pdf->importPage($pageNo);
+                $size = $pdf->getTemplateSize($tpl);
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
         }
+        $pdf->Output($mergedFilePath, 'F');
+        $validated['pieces_jointes'] = $mergedFileName;
+
+        // Libération mémoire
+        $pdf = null;
     }
 
-    $pdf->Output($mergedFilePath, 'F');
-
-    $validated['pieces_jointes'] = $mergedFileName;
-}
-  $demande = Demande::create($validated);
-
     // Création de la demande
-$controleurs = User::whereHas('role', function($q) use ($demande) {
-    $q->where('libelle', 'controleur');
-})->get();
+    $demande = \App\Models\Demande::create($validated);
 
-foreach($controleurs as $user) {
-    Mail::to($user->email)->send(new NouvelleDemandeDP($demande, $controleurs));
-}
+    // Notification aux contrôleurs de l'entité
+    $controleurs = \App\Models\User::whereHas('role.entite', function($q) use ($demande) {
+        $q->where('libelle_entite', $demande->entite->libelle_entite);
+    })->whereHas('role', function($q){
+        $q->whereRaw('LOWER(libelle) = ?', ['controleur']);
+    })->get();
 
-
+    foreach ($controleurs as $user) {
+        Mail::to($user->email)
+            ->send(new NouvelleDemandeDp($demande, $controleurs));
+    }
 
     return redirect()->route('demandes.index')
                      ->with('success', "Demande {$demande->reference_dp} - {$demande->denomination} créée avec succès !");
-
 }
 
     /**
@@ -150,18 +155,38 @@ public function showEnAttenteControl($id)
 
     return view('demandes.show_enattente', compact('demande'));
 }
+
 public function validerControleur($id)
 {
-    $demande = Demande::findOrFail($id);
+    $demande = Demande::with('entite', 'user')->find($id); // Charger l'entité et l'utilisateur qui a initié
 
-    // Mettre le statut à 1 (envoyé au DAF)
-    $demande->status = 1;
-    $demande->save();
+    if ($demande && $demande->status == 0) {
+        $demande->status = 1; // Passe en attente DAF
+        $demande->save();
 
-    // Retourner sur la liste des demandes en attente du contrôleur
+        // Récupérer les DAF de l'entité
+        $dafs = User::whereHas('role', function ($q) use ($demande) {
+                $q->whereRaw('LOWER(libelle) = ?', ['daf'])
+                  ->where('entite_id', $demande->entite_id); // L'entité est dans le role
+            })
+            ->get();
+
+        // Envoi d'un email à chaque DAF de l'entité, en mettant l'initiateur en copie
+        foreach ($dafs as $daf) {
+            Mail::to($daf->email)
+                ->cc($demande->user->email) // copie à l'initiateur
+                ->send(new NotificationDAF($demande));
+        }
+
+        return redirect()->route('demandes.enAttenteControl')
+                         ->with('success', "Demande validée et envoyée aux DAF de l’entité (initiateur en copie).");
+    }
+
     return redirect()->route('demandes.enAttenteControl')
-                     ->with('success', 'La demande a été validée et envoyée au DAF.');
+                     ->with('error', 'Impossible de valider cette demande.');
 }
+
+
 
 public function refuserControleur($id)
 {
@@ -172,9 +197,138 @@ public function refuserControleur($id)
     $demande->save();
 
     // Retourner sur la liste des demandes en attente du contrôleur
-    return redirect()->route('demandes.enAttenteControl')
-                     ->with('error', 'La demande a été refusée.');
+    return redirect()->route('demandes.enAttenteControl')->with('error', 'La demande a été refusée.');
 }
+// DemandeController.php
+
+public function enAttenteDaf()
+{
+    // Liste paginée des demandes en attente DAF
+    $demandes = Demande::with(['entite', 'user'])
+        ->where('status', 1) // status 1 = en attente DAF
+        ->orderByDesc('created_at')
+        ->paginate(12);
+
+    // Vue LISTE
+    return view('demandes.daf', compact('demandes'));
+}
+
+public function showEnAttenteDaf($id)
+{
+    // Une seule demande, détail
+    $demande = Demande::with(['entite', 'user'])
+                      ->where('id', $id)
+                      ->where('status', 1)
+                      ->firstOrFail();
+
+    // Vue DÉTAIL
+    return view('demandes.show_enattenteDaf', compact('demande'));
+}
+
+//validation du DAF
+public function validerDAF($id)
+{
+    $demande = Demande::with('entite', 'user')->find($id); // avec l'utilisateur qui a initié
+
+    if ($demande && $demande->status == 1) { // en attente DAF
+        $demande->status = 2; // passe en attente DG
+        $demande->save();
+
+        // Récupérer les DG de l'entité
+        $dgs = User::whereHas('role', function ($q) use ($demande) {
+            $q->where('entite_id', $demande->entite_id)
+              ->whereRaw('LOWER(libelle) = ?', ['dg']); // rôle DG
+        })->get();
+
+        // Envoi d'un email à chaque DG, copie à l'initiateur
+        foreach ($dgs as $dg) {
+            Mail::to($dg->email)
+                ->cc($demande->user->email) // copie à l'initiateur
+                ->send(new NotificationDG($demande)); // créer le mailable NotificationDG
+        }
+
+        return redirect()->route('demandes.enAttenteDAF')
+                         ->with('success', "Demande validée et envoyée au DG de l’entité (initiateur en copie).");
+    }
+
+    return redirect()->route('demandes.enAttenteDAF')
+                     ->with('error', 'Impossible de valider cette demande.');
+}
+
+public function refuserDaf($id)
+{
+    $demande = Demande::find($id);
+    if($demande && $demande->status == 1){
+        $demande->status = -2; // Refusée par DAF
+        $demande->save();
+        return redirect()->route('demandes.index')->with('error', 'Demande refusée par le DAF.');
+    }
+    return redirect()->route('demandes.enAttenteDaf')->with('error', 'Impossible de refuser cette demande.');
+}
+// Liste des demandes en attente Directeur
+public function enAttenteDirecteur()
+{
+    $demandes = Demande::with(['entite', 'user'])
+        ->where('status', 2) // status 2 = en attente Directeur
+        ->orderByDesc('created_at')
+        ->paginate(12);
+
+    return view('demandes.directeur', compact('demandes'));
+}
+
+// Détail d'une demande en attente Directeur
+public function showEnAttenteDirecteur($id)
+{
+    $demande = Demande::with(['entite', 'user'])
+        ->where('id', $id)
+        ->where('status', 2)
+        ->firstOrFail();
+
+    return view('demandes.show_enattente_directeur', compact('demande'));
+    
+
+}
+// Valider la demande par le Directeur
+public function ValiderDirecteur($id)
+{
+    $demande = Demande::find($id);
+    if($demande && $demande->status == 2){
+        $demande->status = 3; // Statut validé
+        $demande->save();
+        return redirect()->route('demandes.enAttenteDirecteur')->with('success', 'Demande validée avec succès.');
+    }
+    return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de valider cette demande.');
+}
+
+// Refuser la demande par le Directeur
+public function RefuserDirecteur($id)
+{
+    $demande = Demande::find($id);
+    if($demande && $demande->status == 2){
+        $demande->status = -3; // Statut refusé par le DG
+        $demande->save();
+        return redirect()->route('demandes.enAttenteDirecteur')->with('success', 'Demande refusée avec succès.');
+    }
+    return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de refuser cette demande.');
+}
+// Afficher les demandes validées par le DG
+public function valider()
+{
+    // Récupère toutes les demandes avec status = 3 (validées)
+    $demandes = Demande::where('status', 3)
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(12); // pagination 10 par page
+
+
+    // Retourne la vue valider.blade.php avec les demandes
+    return view('demandes.valider', compact('demandes'));
+}
+public function showValider($id)
+{
+    $demande = Demande::findOrFail($id);
+    return view('demandes.show_valider', compact('demande'));
+}
+
 
 
 }
