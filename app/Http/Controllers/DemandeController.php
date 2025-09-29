@@ -12,7 +12,12 @@ use setasign\Fpdi\Fpdi;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NouvelleDemandeDP; // ou DemandePaiementMail selon le nom que tu as donné
 use App\Mail\NotificationDAF;
- 
+use App\Mail\NotificationDG;
+use App\Mail\NotificationTresorie;
+use App\Mail\DemandeRefusee;
+use App\Mail\DemandeRefuseeDaf;
+use App\Mail\DemandeRefuseeDG;
+
 class DemandeController extends Controller
 {
     /**
@@ -190,14 +195,22 @@ public function validerControleur($id)
 
 public function refuserControleur($id)
 {
-    $demande = Demande::findOrFail($id);
+    // Récupérer la demande avec l'utilisateur qui l'a initiée
+    $demande = Demande::with('user')->findOrFail($id);
 
     // Mettre le statut à -1 (refusé par le contrôleur)
     $demande->status = -1;
     $demande->save();
 
-    // Retourner sur la liste des demandes en attente du contrôleur
-    return redirect()->route('demandes.enAttenteControl')->with('error', 'La demande a été refusée.');
+    // Envoyer un email à l'initiateur
+    if ($demande->user && $demande->user->email) {
+        Mail::to($demande->user->email)
+            ->send(new DemandeRefusee($demande));
+    }
+
+    // Rediriger avec message d'erreur
+    return redirect()->route('demandes.enAttenteControl')
+                     ->with('error', 'La demande a été refusée et l’initiateur a été notifié.');
 }
 // DemandeController.php
 
@@ -228,41 +241,68 @@ public function showEnAttenteDaf($id)
 //validation du DAF
 public function validerDAF($id)
 {
-    $demande = Demande::with('entite', 'user')->find($id); // avec l'utilisateur qui a initié
+    $demande = Demande::with('entite', 'user')->find($id); // Charger entité et utilisateur
 
-    if ($demande && $demande->status == 1) { // en attente DAF
-        $demande->status = 2; // passe en attente DG
+    if ($demande && $demande->status == 1) {
+        $demande->status = 2; // En attente DG
         $demande->save();
 
         // Récupérer les DG de l'entité
         $dgs = User::whereHas('role', function ($q) use ($demande) {
-            $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['dg']); // rôle DG
-        })->get();
+                $q->whereRaw('LOWER(libelle) = ?', ['dg'])
+                  ->where('entite_id', $demande->entite_id);
+            })
+            ->get();
 
-        // Envoi d'un email à chaque DG, copie à l'initiateur
-        foreach ($dgs as $dg) {
-            Mail::to($dg->email)
-                ->cc($demande->user->email) // copie à l'initiateur
-                ->send(new NotificationDG($demande)); // créer le mailable NotificationDG
+        // Récupérer le contrôleur de la même entité
+        $controleur = User::whereHas('role', function($q) use ($demande) {
+            $q->whereRaw('LOWER(libelle) = ?', ['controleur'])
+              ->where('entite_id', $demande->entite_id);
+        })->first();
+
+        // Préparer la liste des CC
+        $cc = [];
+        if ($demande->user) $cc[] = $demande->user->email;       // Initiateur
+        if ($controleur) $cc[] = $controleur->email;            // Contrôleur
+
+        // Envoyer le mail à tous les DG de l’entité
+        if ($dgs->isNotEmpty()) {
+            Mail::to($dgs->pluck('email'))
+                ->cc($cc)
+                ->send(new NotificationDG($demande));
         }
 
-        return redirect()->route('demandes.enAttenteDAF')
-                         ->with('success', "Demande validée et envoyée au DG de l’entité (initiateur en copie).");
+        return redirect()->route('demandes.enAttenteDaf')
+                         ->with('success', 'Demande validée et envoyée aux DG de l’entité (CC : initiateur, contrôleur).');
     }
 
-    return redirect()->route('demandes.enAttenteDAF')
+    return redirect()->route('demandes.enAttenteDaf')
                      ->with('error', 'Impossible de valider cette demande.');
 }
 
 public function refuserDaf($id)
 {
-    $demande = Demande::find($id);
+    $demande = Demande::with('entite', 'user')->findOrFail($id); // Charger l'entité et l'utilisateur
     if($demande && $demande->status == 1){
         $demande->status = -2; // Refusée par DAF
         $demande->save();
-        return redirect()->route('demandes.index')->with('error', 'Demande refusée par le DAF.');
+
+        // Récupérer le contrôleur de l'entité
+        $controleur = User::whereHas('role', function($q) use ($demande) {
+            $q->where('entite_id', $demande->entite_id)
+              ->whereRaw('LOWER(libelle) = ?', ['controleur']);
+        })->first();
+
+        // Envoi du mail à l'initiateur avec le contrôleur en copie
+        if($demande->user && $controleur) {
+            Mail::to($demande->user->email)
+                ->cc($controleur->email?? null)
+                ->send(new DemandeRefuseeDaf($demande));
+        }
+
+        return redirect()->route('demandes.enAttenteDaf')->with('error', 'Demande refusée par le DAF.');
     }
+
     return redirect()->route('demandes.enAttenteDaf')->with('error', 'Impossible de refuser cette demande.');
 }
 // Liste des demandes en attente Directeur
@@ -289,28 +329,83 @@ public function showEnAttenteDirecteur($id)
 
 }
 // Valider la demande par le Directeur
-public function ValiderDirecteur($id)
+public function validerDirecteur($id)
 {
-    $demande = Demande::find($id);
-    if($demande && $demande->status == 2){
-        $demande->status = 3; // Statut validé
+    $demande = Demande::with('entite', 'user')->find($id); // Charger l'entité et l'initiateur
+
+    if ($demande && $demande->status == 2) {
+        $demande->status = 3; // Statut validé par DG
         $demande->save();
-        return redirect()->route('demandes.enAttenteDirecteur')->with('success', 'Demande validée avec succès.');
+
+        // Récupérer la Trésorie de l'entité
+        $tresories = User::whereHas('role', function ($q) use ($demande) {
+            $q->whereRaw('LOWER(libelle) = ?', ['tresorie'])
+              ->where('entite_id', $demande->entite_id);
+        })->get();
+
+        // Récupérer le DAF qui a validé
+        $daf = User::whereHas('role', function($q) use ($demande) {
+            $q->whereRaw('LOWER(libelle) = ?', ['daf'])
+              ->where('entite_id', $demande->entite_id);
+        })->first();
+
+        // Récupérer le contrôleur de l'entité
+        $controleur = User::whereHas('role', function($q) use ($demande) {
+            $q->whereRaw('LOWER(libelle) = ?', ['controleur'])
+              ->where('entite_id', $demande->entite_id);
+        })->first();
+
+        // Envoi du mail à la Trésorie avec copies à l'initiateur, au DAF et au contrôleur
+        foreach ($tresories as $tresorie) {
+           Mail::to($tresorie->email)
+                ->cc(array_filter([
+                    $demande->user->email ?? null,
+                    $daf->email ?? null,
+                    $controleur->email ?? null,
+                ]))
+                ->send(new NotificationTresorie($demande));
+        }
+
+        return redirect()->route('demandes.enAttenteDirecteur')
+                         ->with('success', 'Demande validée et envoyée à la Trésorie.');
     }
-    return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de valider cette demande.');
+
+    return redirect()->route('demandes.enAttenteDirecteur')
+                     ->with('error', 'Impossible de valider cette demande.');
 }
 
+
 // Refuser la demande par le Directeur
+
+
+
 public function RefuserDirecteur($id)
 {
-    $demande = Demande::find($id);
-    if($demande && $demande->status == 2){
-        $demande->status = -3; // Statut refusé par le DG
+    $demande = Demande::with('entite', 'user')->findOrFail($id);
+
+    if ($demande->status == 2) {
+        $demande->status = -3; // Refusée par le DG
         $demande->save();
+
+        // Envoi du mail à l'initiateur avec DAF et contrôleur en copie
+        $daf = User::whereHas('role', fn($q) => $q->where('entite_id', $demande->entite_id)
+                                                   ->whereRaw('LOWER(libelle) = ?', ['daf']))
+                                                   ->first();
+        $controleur = User::whereHas('role', fn($q) => $q->where('entite_id', $demande->entite_id)
+                                                          ->whereRaw('LOWER(libelle) = ?', ['controleur']))
+                                                           ->first();
+
+        Mail::to($demande->user->email)
+            ->cc(array_filter([$daf->email ?? null, $controleur->email ?? null]))
+            ->send(new DemandeRefuseeDG($demande));
+
         return redirect()->route('demandes.enAttenteDirecteur')->with('success', 'Demande refusée avec succès.');
     }
+
     return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de refuser cette demande.');
 }
+
+
 // Afficher les demandes validées par le DG
 public function valider()
 {
