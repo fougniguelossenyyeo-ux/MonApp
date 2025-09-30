@@ -131,8 +131,8 @@
                             <p class="text-sm font-semibold text-gray-900">{{ number_format($a->montant_paiement_fournisseur, 0, ',', ' ') }} F CFA</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-xs text-gray-500">Créé le</p>
-                            <p class="text-xs font-medium text-gray-900">{{ $a->created_at?->format('d/m/Y H:i') }}</p>
+                            <p class="text-xs text-gray-500">Fournisseur</p>
+                            <p class="text-xs font-medium text-gray-900">  <strong>{{ $a->nom_fournisseur }}</strong> </p>
                         </div>
                     </div>
                 </div>

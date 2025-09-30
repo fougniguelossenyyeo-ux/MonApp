@@ -17,7 +17,7 @@ use App\Mail\NotificationTresorie;
 use App\Mail\DemandeRefusee;
 use App\Mail\DemandeRefuseeDaf;
 use App\Mail\DemandeRefuseeDG;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 class DemandeController extends Controller
 {
     /**
@@ -54,6 +54,7 @@ public function store(Request $request)
         $validated = $request->validate([
             'denomination' => 'required|string|max:255',
             'entite_id' => 'required|uuid|exists:entites,id',
+            'nom_fournisseur' => 'required|string|max:255',
             'montant_ht' => 'required|numeric|min:0',
             'tva' => 'required|numeric|min:0',
             'date_paiement' => 'required|date',
@@ -133,7 +134,7 @@ public function store(Request $request)
                          ->with('error', 'Une erreur est survenue lors de la création de la demande. Veuillez réessayer.');
     }
 }
-
+  
     /**
 v/**
  * Affiche une demande
@@ -176,6 +177,7 @@ public function validerControleur($id)
 
     if ($demande && $demande->status == 0) {
         $demande->status = 1; // Passe en attente DAF
+        $demande->date_validation_controleur = now();
         $demande->save();
 
         // Récupérer les DAF de l'entité
@@ -193,7 +195,7 @@ public function validerControleur($id)
         }
 
         return redirect()->route('demandes.enAttenteControl')
-                         ->with('success', "Demande validée et envoyée aux DAF de l’entité (initiateur en copie).");
+                         ->with('success', "Demande validée et envoyée aux DAF de l’entité.");
     }
 
     return redirect()->route('demandes.enAttenteControl')
@@ -209,6 +211,7 @@ public function refuserControleur($id)
 
     // Mettre le statut à -1 (refusé par le contrôleur)
     $demande->status = -1;
+    $demande->date_validation_controleur = now(); 
     $demande->save();
 
     // Envoyer un email à l'initiateur
@@ -254,6 +257,7 @@ public function validerDAF($id)
 
     if ($demande && $demande->status == 1) {
         $demande->status = 2; // En attente DG
+        $demande->date_validation_daf = now();
         $demande->save();
 
         // Récupérer les DG de l'entité
@@ -294,6 +298,7 @@ public function refuserDaf($id)
     $demande = Demande::with('entite', 'user')->findOrFail($id); // Charger l'entité et l'utilisateur
     if($demande && $demande->status == 1){
         $demande->status = -2; // Refusée par DAF
+         $demande->date_validation_daf = now();
         $demande->save();
 
         // Récupérer le contrôleur de l'entité
@@ -344,6 +349,7 @@ public function validerDirecteur($id)
 
     if ($demande && $demande->status == 2) {
         $demande->status = 3; // Statut validé par DG
+        $demande->date_validation_dg = now();
         $demande->save();
 
         // Récupérer la Trésorie de l'entité
@@ -394,6 +400,7 @@ public function RefuserDirecteur($id)
 
     if ($demande->status == 2) {
         $demande->status = -3; // Refusée par le DG
+        $demande->date_validation_dg = now();
         $demande->save();
 
         // Envoi du mail à l'initiateur avec DAF et contrôleur en copie
@@ -431,6 +438,15 @@ public function showValider($id)
 {
     $demande = Demande::findOrFail($id);
     return view('demandes.show_valider', compact('demande'));
+}
+
+//impression demandes de paiements
+public function imprimer($id)
+{
+    $demande = Demande::with('user', 'entite')->findOrFail($id);
+
+    // Affiche la vue HTML pour impression
+    return view('demandes.dp_imprimer', compact('demande'));
 }
 
 

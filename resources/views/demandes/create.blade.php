@@ -74,6 +74,12 @@
                             <input type="text" name="denomination" id="requester" placeholder="Achat d'ordinateur lenovo"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
                         </div>
+                         <!-- nom_fournissuer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fournisseur</label>
+                            <input type="text" name="nom_fournisseur" id="requester" placeholder="fournisseur"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                        </div>
                         <!-- Entité -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Entité <span class="text-red-500">*</span></label>
@@ -156,10 +162,10 @@
 
                 <!-- Step 2: Détails de la dépense -->
                 <div class="form-step hidden mt-8">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Détails de la dépense</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Suite des informations</h2>
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Objet de la Dépense</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                             <textarea name="description" id="description" rows="4" placeholder="Décrivez l'objet de la dépense..."
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"></textarea>
                         </div>

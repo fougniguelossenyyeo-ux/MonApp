@@ -76,6 +76,9 @@ Route::get('/demandes/en-attente-daf', [DemandeController::class, 'enAttenteDaf'
 Route::get('/demandes/en-attente-directeur', [DemandeController::class, 'enAttenteDirecteur'])->name('demandes.enAttenteDirecteur');
 // Route pour afficher les demandes validées par le DG
 Route::get('/demandes/valider', [DemandeController::class, 'valider'])->name('demandes.valider');
+//impression Dp
+Route::get('demandes/{id}/imprimer', [DemandeController::class, 'imprimer']) ->name('demandes.imprimer');
+
 // Pour afficher une demande validée
 Route::get('/demandes/valider/{id}', [DemandeController::class, 'showValider'])->name('demandes.showValider');
 

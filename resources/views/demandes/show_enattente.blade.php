@@ -11,7 +11,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-2xl font-bold">{{ $demande->reference_dp }}</h2>
-                <p class="mt-1 opacity-90">{{ $demande->denomination }}</p>
+                <p class="text-2xl font-bold">{{ $demande->denomination }}</p>
             </div>
                <div class="mt-4 md:mt-0">
             @php
@@ -50,6 +50,10 @@
                 <div>
                     <p class="text-sm text-gray-500">Demandeur</p>
                     <p class="font-medium text-gray-900">{{ $demande->user->prenom }} {{ $demande->user->nom }}</p>
+                </div>
+                  <div>
+                    <p class="text-sm text-gray-500">Fournisseur</p>
+                    <p class="font-medium text-gray-900">{{ $demande->nom_fournisseur }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Entité</p>
@@ -132,7 +136,7 @@
 
     <!-- Description -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Objet de la dépense</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
         <p class="text-gray-700">{{ $demande->description ?? '-' }}</p>
     </div>
 <!-- Pièces jointes -->

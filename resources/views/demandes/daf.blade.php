@@ -147,14 +147,26 @@
 
                 <!-- Footer carte -->
                 <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
-                    <span class="text-xs text-gray-500">Date de création : {{ $demande->created_at?->format('d/m/Y H:i') }}</span>
-                    <div class="flex space-x-2">
-                        <a href="{{ route('demandes.showEnAttenteDaf', $demande->id) }}" 
-                           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                            Voir détails
-                        </a>
-                    </div>
-                </div>
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>date de création :</span>
+        <span class="text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</span>
+    </div>
+
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>Validation Contrôleur:</span>
+        <span class="text-gray-900">
+            {{ $demande->date_validation_controleur?->format('d/m/Y H:i') ?? 'Non validée' }}
+        </span>
+    </div>
+
+    <div class="flex space-x-2">
+        <a href="{{ route('demandes.showEnAttenteDaf', $demande->id) }}" 
+           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+            Voir détails
+        </a>
+    </div>
+</div>
+
             </div>
         </div>
     @empty

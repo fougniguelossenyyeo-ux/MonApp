@@ -51,24 +51,34 @@
                
             </div>
 
-            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span class="text-indigo-800 font-medium">AK</span>
-                    </div>
-                    <a href="infomodifpersonnel.html" id="userText" class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">Amina Koné</p>
-                        <p class="text-xs text-gray-500">Caissière</p>
-                    </a>
-                </div>
-               <a href="{{route('logout')}}" id="logoutBtn" class="w-full flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                    <i class="fas fa-sign-out-alt mr-2"></i>
-                    <span id="logoutText">Déconnexion</span>
-               
-                </a>
-                
-                <!-- Bouton de bascule -->
-               
-            </div>
+<div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+    <div class="flex items-center mb-4">
+        <!-- Initiales dynamiques -->
+        <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+            <span class="text-indigo-800 font-medium">
+                {{ strtoupper(substr(Auth::user()->prenom,0,1) . substr(Auth::user()->nom,0,1)) }}
+            </span>
+        </div>
+
+        <!-- Nom et poste dynamique -->
+        <a href="{{ route('users.edit', Auth::user()->id) }}" id="userText" class="ml-3">
+            <p class="text-sm font-medium text-gray-900">{{ Auth::user()->prenom }} {{ Auth::user()->nom }}</p>
+            <p class="text-xs text-gray-500">{{ Auth::user()->role?->libelle ?? 'Non défini' }}</p>
+        </a>
+    </div>
+
+    <!-- Bouton Déconnexion dynamique -->
+   
+
+    <!-- Formulaire de logout (POST) -->
+      <!-- Bouton Déconnexion -->
+    <a href="{{ route('logout') }}" id="logoutBtn"
+       class="w-full flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+        <i class="fas fa-sign-out-alt mr-2"></i>
+        <span id="logoutText">Déconnexion</span>
+</a>
+</div>
+
+
         </nav>
     </div>

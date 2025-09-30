@@ -21,6 +21,7 @@ class Demande extends Model
   protected $fillable = [
     'denomination',
     'entite_id',
+    'nom_fournisseur',
     'reference_dp',
     'montant_ht', // nouveau
     'tva',        // nouveau
@@ -42,6 +43,10 @@ class Demande extends Model
     'pieces_jointes',
     'status',
     'user_id',
+    'date_validation_controleur',
+    'date_validation_daf',
+    'date_validation_dg',
+
 ];
 
       // Casts pour transformer les dates en objets Carbon
@@ -49,6 +54,9 @@ class Demande extends Model
         'date_paiement' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'date_validation_controleur' => 'datetime',
+        'date_validation_daf' => 'datetime',
+        'date_validation_dg' => 'datetime',
     ];
 
     // Relations

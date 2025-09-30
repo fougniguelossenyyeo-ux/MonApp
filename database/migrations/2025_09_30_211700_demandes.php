@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('demandes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('denomination');
+            $table->string('nom_fournisseur'); // <- champ ajouté
             $table->uuid('entite_id');
             $table->string('reference_dp')->unique();
             $table->decimal('montant_ht', 15, 2)->default(0); // Montant hors taxe
@@ -33,6 +34,10 @@ return new class extends Migration
             $table->string('pieces_jointes')->nullable();
             $table->tinyInteger('status')->default(0);
             $table->uuid('user_id');
+             // Dates de validation
+            $table->timestamp('date_validation_controleur')->nullable();
+            $table->timestamp('date_validation_daf')->nullable();
+            $table->timestamp('date_validation_dg')->nullable();
 
             $table->timestamps();
 

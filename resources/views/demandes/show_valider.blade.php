@@ -9,7 +9,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-2xl font-bold">{{ $demande->reference_dp }}</h2>
-                <p class="mt-1 opacity-90">{{ $demande->denomination }}</p>
+                <p class="text-2xl font-bold">{{ $demande->denomination }}</p>
             </div>
             <div class="mt-4 md:mt-0">
                 <span class="status-badge bg-green-50 text-green-700 text-xs px-2 py-1 rounded">
@@ -28,6 +28,11 @@
                 <div>
                     <p class="text-sm text-gray-500">Demandeur</p>
                     <p class="font-medium text-gray-900">{{ $demande->user->prenom }} {{ $demande->user->nom }}</p>
+
+                </div>
+                   <div>
+                    <p class="text-sm text-gray-500">Fournisseur</p>
+                    <p class="font-medium text-gray-900">{{ $demande->nom_fournisseur}}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Entité</p>
@@ -110,7 +115,7 @@
 
     <!-- Description -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Objet de la dépense</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
         <p class="text-gray-700">{{ $demande->description ?? '-' }}</p>
     </div>
 
@@ -145,14 +150,20 @@
         <iframe id="pieceViewer" src="" class="w-full h-full"></iframe>
     </div>
 </div>
+<div class="mt-6 flex justify-between">
+    <!-- Bouton Retour -->
+    <a href="{{ route('demandes.valider') }}" 
+       class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold">
+        Retour à la liste des demandes validées
+    </a>
 
+    <!-- Bouton Imprimer -->
+    <a href="{{ route('demandes.imprimer', $demande->id) }}" 
+       class="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">
+        <i class="fas fa-print mr-2"></i> Imprimer la demande
+    </a>
+</div>
 
-    <div class="mt-6">
-        <a href="{{ route('demandes.valider') }}" 
-           class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold">
-             Retour à la liste des demandes validées
-        </a>
-    </div>
 </main>
 
 <script>

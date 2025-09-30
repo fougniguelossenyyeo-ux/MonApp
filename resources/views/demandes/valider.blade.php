@@ -129,16 +129,50 @@
                     </div>
 
                     <!-- Footer -->
-                    <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
-                        <span class="text-xs text-gray-500">Date de validation : {{ $demande->updated_at?->format('d/m/Y H:i') }}</span>
-                        <div class="flex space-x-2">
-                            <a href="{{ route('demandes.showValider', $demande->id) }}" 
-                               class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                                Voir détails
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                   <!-- Date de création -->
+<!-- Footer : Dates de validation et lien détails -->
+<div class="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-3">
+
+    <!-- Création -->
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>Créée le :</span>
+        <span class="text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</span>
+    </div>
+
+    <!-- Validation Contrôleur -->
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>Validation Contrôleur :</span>
+        <span class="text-gray-900">
+            {{ $demande->date_validation_controleur?->format('d/m/Y H:i') ?? 'Non validée' }}
+        </span>
+    </div>
+
+    <!-- Validation DAF -->
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>Validation DAF :</span>
+        <span class="text-gray-900">
+            {{ $demande->date_validation_daf?->format('d/m/Y H:i') ?? 'Non validée' }}
+        </span>
+    </div>
+
+    <!-- Validation DG -->
+    <div class="flex flex-col text-xs text-gray-500">
+        <span>Validation DG :</span>
+        <span class="text-gray-900">
+            {{ $demande->date_validation_dg?->format('d/m/Y H:i') ?? 'Non validée' }}
+        </span>
+    </div>
+
+    <!-- Lien détails -->
+    <div class="flex items-center">
+        <a href="{{ route('demandes.showValider', $demande->id) }}" 
+           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+            Voir détails
+        </a>
+    </div>
+
+</div>
+
             </div>
         @empty
             <div class="col-span-4 text-center py-12">
