@@ -2,29 +2,7 @@
     @section('maincontent')
     @include('layouts.demande')
             <!-- Main Content -->
-@if(session('success'))
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Succès',
-            text: '{{ session('success') }}',
-            confirmButtonColor: '#3085d6',
-            confirmButtonText: 'OK'
-        });
-    </script>
-@endif
 
-@if(session('error'))
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: '{{ session('error') }}',
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Fermer'
-        });
-    </script>
-@endif
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -265,4 +243,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
         @endsection
