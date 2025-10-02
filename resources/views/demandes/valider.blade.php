@@ -75,112 +75,98 @@
     </div>
 
     <!-- Grille des cartes -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-        @forelse($demandes as $demande)
-            <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                    <!-- Header -->
-                    <div>
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $demande->reference_dp }}</h3>
-                                <p class="text-xs text-gray-500 mt-1">Délai: {{ $demande->date_paiement?->format('d/m/Y') }}</p>
-                            </div>
-                        </div>
-
-                        <!-- Statut -->
-                        @php
-                            $statusText = "Validé";
-                            $badgeColor = "bg-green-50 text-green-700";
-                        @endphp
-
-                        <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded inline-block mb-2">
-                            <b>{{ $statusText }}</b>
-                        </span>
-
-                        <!-- Dénomination & Entité -->
-                        <div class="mb-3">
-                            <p class="text-gray-700 text-sm font-medium truncate">{{ $demande->denomination }}</p>
-                            <div class="flex space-x-1 mt-1">
-                                <span class="entity-badge bg-slate-100 text-slate-700 inline-block text-xs px-2 py-1 rounded">
-                                    {{ $demande->entite?->libelle_entite ?? 'non définie' }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Montant & Date création -->
-                        <div class="flex justify-between items-center mb-3">
-                            <div>
-                                <p class="text-xs text-gray-500">Montant</p>
-                                <p class="text-sm font-semibold text-gray-900">
-                                    {{ number_format($demande->montant_paiement_fournisseur, 0, ',', ' ') }} F CFA
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Créé le</p>
-                                <p class="text-xs font-medium text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</p>
-                            </div>
+<!-- Grille des cartes -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+    @forelse($demandes as $demande)
+        <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+            <!-- Contenu principal de la card -->
+            <div class="p-4 flex flex-col justify-between h-full">
+                <!-- Header -->
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $demande->reference_dp }}</h3>
+                            <p class="text-xs text-gray-500 mt-1">Délai: {{ $demande->date_paiement?->format('d/m/Y') }}</p>
                         </div>
                     </div>
 
-                    <!-- Description -->
-                    <div class="border-t border-gray-100 pt-3 mt-3 flex-1">
-                        <p class="text-xs text-gray-600 line-clamp-3">{{ $demande->description }}</p>
+                    <!-- Statut -->
+                    @php
+                        $statusText = "Validé";
+                        $badgeColor = "bg-green-50 text-green-700";
+                    @endphp
+                    <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded inline-block mb-2">
+                        <b>{{ $statusText }}</b>
+                    </span>
+
+                    <!-- Dénomination & Entité -->
+                    <div class="mb-3">
+                        <p class="text-gray-700 text-sm font-medium truncate">{{ $demande->denomination }}</p>
+                        <div class="flex space-x-1 mt-1">
+                            <span class="entity-badge bg-slate-100 text-slate-700 inline-block text-xs px-2 py-1 rounded">
+                                {{ $demande->entite?->libelle_entite ?? 'non définie' }}
+                            </span>
+                        </div>
                     </div>
 
-                    <!-- Footer -->
-                   <!-- Date de création -->
-<!-- Footer : Dates de validation et lien détails -->
-<div class="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-3">
+                    <!-- Montant & Date création -->
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <p class="text-xs text-gray-500">Montant</p>
+                            <p class="text-sm font-semibold text-gray-900">
+                                {{ number_format($demande->montant_paiement_fournisseur, 0, ',', ' ') }} F CFA
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Créé le</p>
+                            <p class="text-xs font-medium text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</p>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Création -->
-    <div class="flex flex-col text-xs text-gray-500">
-        <span>Créée le :</span>
-        <span class="text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</span>
-    </div>
+                <!-- Description -->
+                <div class="border-t border-gray-100 pt-3 mt-3 flex-none">
+                    <p class="text-xs text-gray-600 line-clamp-3">{{ $demande->description }}</p>
+                </div>
 
-    <!-- Validation Contrôleur -->
-    <div class="flex flex-col text-xs text-gray-500">
-        <span>Validation Contrôleur :</span>
-        <span class="text-gray-900">
-            {{ $demande->date_validation_controleur?->format('d/m/Y H:i') ?? 'Non validée' }}
-        </span>
-    </div>
+                <!-- Footer -->
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                    <div class="flex flex-col">
+                        <span>Créée le :</span>
+                        <span class="text-gray-900">{{ $demande->created_at?->format('d/m/Y H:i') }}</span>
+                    </div>
 
-    <!-- Validation DAF -->
-    <div class="flex flex-col text-xs text-gray-500">
-        <span>Validation DAF :</span>
-        <span class="text-gray-900">
-            {{ $demande->date_validation_daf?->format('d/m/Y H:i') ?? 'Non validée' }}
-        </span>
-    </div>
+                    <div class="flex flex-col">
+                        <span>Validation Contrôleur :</span>
+                        <span class="text-gray-900">{{ $demande->date_validation_controleur?->format('d/m/Y H:i') ?? 'Non validée' }}</span>
+                    </div>
 
-    <!-- Validation DG -->
-    <div class="flex flex-col text-xs text-gray-500">
-        <span>Validation DG :</span>
-        <span class="text-gray-900">
-            {{ $demande->date_validation_dg?->format('d/m/Y H:i') ?? 'Non validée' }}
-        </span>
-    </div>
+                    <div class="flex flex-col">
+                        <span>Validation DAF :</span>
+                        <span class="text-gray-900">{{ $demande->date_validation_daf?->format('d/m/Y H:i') ?? 'Non validée' }}</span>
+                    </div>
 
-    <!-- Lien détails -->
-    <div class="flex items-center">
-        <a href="{{ route('demandes.showValider', $demande->id) }}" 
-           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-            Voir détails
-        </a>
-    </div>
+                    <div class="flex flex-col">
+                        <span>Validation DG :</span>
+                        <span class="text-gray-900">{{ $demande->date_validation_dg?->format('d/m/Y H:i') ?? 'Non validée' }}</span>
+                    </div>
 
+                    <div class="flex items-center">
+                        <a href="{{ route('demandes.showValider', $demande->id) }}" 
+                           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                            Voir détails
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @empty
+        <div class="col-span-4 text-center py-12">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune demande validée</h3>
+            <p class="text-gray-500">Il n’y a actuellement aucune demande validée par le Directeur.</p>
+        </div>
+    @endforelse
 </div>
-
-            </div>
-        @empty
-            <div class="col-span-4 text-center py-12">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune demande validée</h3>
-                <p class="text-gray-500">Il n’y a actuellement aucune demande validée par le Directeur.</p>
-            </div>
-        @endforelse
-    </div>
 
     <!-- Pagination -->
     <div class="mt-6">

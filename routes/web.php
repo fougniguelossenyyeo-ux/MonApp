@@ -18,7 +18,21 @@ use App\Http\Controllers\DemandeController;
 Route::get('/', function () {
     return view('auth.login');
 });
+// Formulaire mot de passe oublié
+Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])
+    ->name('password.request');
 
+// Envoi du mail de réinitialisation
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])
+    ->name('password.email');
+
+// Formulaire réinitialisation mot de passe
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])
+    ->name('password.reset');
+
+// Soumettre le nouveau mot de passe
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
 // Auth
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('auth.register.form');
 Route::post('/register', [AuthController::class, 'register'])->name('auth.register');

@@ -129,12 +129,13 @@
 
           <!-- Lien mot de passe oublié -->
           <div class="flex items-center justify-end">
-            <div class="text-sm">
-              <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
-                Mot de passe oublié?
-              </a>
-            </div>
-          </div>
+  <div class="text-sm">
+    <button type="button" id="openForgotModal" class="font-medium text-blue-600 hover:text-blue-500">
+      Mot de passe oublié ?
+    </button>
+  </div>
+</div>
+
 
           <!-- Bouton de soumission -->
           <div>
@@ -146,6 +147,31 @@
             </button>
           </div>
         </form>
+        <!-- Modal Mot de passe oublié -->
+<div id="forgotPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative">
+    <button id="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
+    <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">Réinitialiser le mot de passe</h2>
+
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
+      @csrf
+      <label for="modalEmail" class="block text-sm font-medium text-gray-700">Email</label>
+      <input type="email" name="email" id="modalEmail" required
+             class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+             placeholder="votre.email@entreprise.com">
+
+      <button type="submit"
+              class="w-full bg-gradient-to-r from-blue-500 to-violet-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-violet-700">
+        Envoyer le lien
+      </button>
+    </form>
+
+    <div class="text-center mt-4">
+      <button id="cancelModal" class="text-gray-500 hover:text-gray-700 text-sm">Annuler</button>
+    </div>
+  </div>
+</div>
+
       </div>
     </div>
 
@@ -166,7 +192,34 @@
       const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
       password.setAttribute('type', type);
       togglePassword.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+
     });
+  
+const openModalBtn = document.getElementById('openForgotModal');
+const closeModalBtn = document.getElementById('closeModal');
+const cancelModalBtn = document.getElementById('cancelModal');
+const modal = document.getElementById('forgotPasswordModal');
+
+openModalBtn.addEventListener('click', () => {
+  modal.classList.remove('hidden');
+});
+
+closeModalBtn.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+cancelModalBtn.addEventListener('click', () => {
+  modal.classList.add('hidden');
+});
+
+// Fermer modal si on clique à l'extérieur
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    modal.classList.add('hidden');
+  }
+});
+
+
   </script>
 
 </body>
