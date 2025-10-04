@@ -42,6 +42,8 @@
                         Création d'une entité
                     @elseif(request()->routeIs('entites.edit'))
                         Édition d'une entité
+                    @elseif(request()->routeIs('Paiements.index'))
+                        Paiement des demandes
                     @else
                         {{ $pageTitle ?? '' }}
                     @endif

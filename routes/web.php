@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\EntiteController;
 use App\Http\Controllers\DemandeController;
+use App\Http\Controllers\PaiementController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -118,8 +119,32 @@ Route::post('/demandes/{id}/refuser-controleur', [DemandeController::class, 'ref
 
 
 
+//paiements 
+
+Route::get('/faire-paiement', [PaiementController::class, 'index'])->name('paiements.index');
+Route::get('/faire-paiement/search', [PaiementController::class, 'index'])->name('faire-paiement.index');
+Route::post('/faire-paiement/search', [PaiementController::class, 'search'])->name('faire-paiement.search');
 
 
+// Paiements validés / effectués
+Route::get('/paiements/valides', [PaiementController::class, 'valides'])->name('paiements.valides');
+// Paiements partiellement payés
+Route::get('/paiements/partiellement', [PaiementController::class, 'partiellement'])->name('paiements.partiellement');
+Route::post('/paiements/{demande}', [PaiementController::class, 'store'])->name('paiements.payer');
+
+Route::post('/faire-paiement/{paiementId}/payer', [PaiementController::class, 'payer'])->name('paiements.payer');
+
+Route::get('/paiements/emis', [PaiementController::class, 'emis'])->name('paiements.emis');
+Route::get('/paiements/encours', [PaiementController::class, 'encours'])->name('paiements.encours');
+Route::post('/paiements/{paiement}/payer', [PaiementController::class, 'payer'])->name('paiements.payer');
+// Afficher le paiement à valider par le DG
+Route::get('/paiements/dg-valider/{id}', [PaiementController::class, 'dgValider'])->name('paiements.dg_valider');
+
+// Action pour valider le paiement par le DG
+Route::post('/paiements/dg-valider/{id}', [PaiementController::class, 'validerDG'])->name('paiements.validerDG');
+
+// Action pour refuser le paiement par le DG
+Route::post('/paiements/dg-refuser/{id}', [PaiementController::class, 'refuserDG'])->name('paiements.refuserDG');
 
 
  

@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('paiement_versements', function (Blueprint $table) {
+            $table->uuid('id')->primary(); // UUID pour l'identifiant
+            $table->uuid('paiement_id'); // Référence vers le paiement parent
+            $table->integer('nombre_versements')->default(0);
+            $table->decimal('montant', 15, 2); // Montant versé
+            $table->timestamp('date_versement')->useCurrent(); // Date du versement
+            $table->string('commentaire')->nullable(); // Commentaire optionnel
+            $table->timestamps();
+
+            // Clé étrangère vers paiements
+            $table
+                ->foreign('paiement_id')
+                ->references('id')
+                ->on('paiements')
+                ->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('paiement_versements');
+    }
+};

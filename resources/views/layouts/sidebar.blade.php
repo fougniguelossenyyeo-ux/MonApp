@@ -47,7 +47,7 @@
             </a>
 
             <!-- Faire un paiement -->
-            <a href="#" 
+            <a href="{{route('paiements.index')}}" 
                class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiement') ? 'active' : '' }}">
                 <i class="fas fa-money-bill-wave mr-3"></i>
                 <span id="paymentText">Faire un paiement</span>
@@ -60,11 +60,11 @@
                 <span id="requestsText">Demandes</span>
             </a>
 
-            <!-- Archives -->
-            <a href="#" 
+            <!-- Paiements-->
+            <a href="{{route('paiements.emis')}}"
                class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('archiveDP') ? 'active' : '' }}">
                 <i class="fas fa-archive mr-3"></i>
-                <span id="archivesText">Archives</span>
+                <span id="archivesText">Paiements</span>
             </a>
 
             <!-- Administration -->
