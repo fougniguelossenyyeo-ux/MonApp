@@ -77,7 +77,7 @@
                     3 => "bg-green-50 text-green-700",
                     default => "bg-gray-50 text-gray-700",
                 };
-                $nombreVersements = $p->paiementVersements()->count();
+                $nombreVersements = $p->paiementsVersements()->count();
             @endphp
 
             <div class="archive-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full">
@@ -86,7 +86,13 @@
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $p->demande->reference_dp ?? 'N/A' }}</h3>
-                                <p class="text-xs text-gray-500 mt-1">{{ $p->created_at?->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                             Délai de paiement : 
+                             <span class="font-medium text-gray-800">
+                            {{ $p->demande->date_paiement?->format('d/m/Y') ?? 'Non défini' }}
+                              </span>
+                               </p>
+
                             </div>
                         </div>
 
@@ -126,10 +132,10 @@
                         </div>
 
                         <div class="flex items-center">
-                            <a href="{{ route('paiements.payer', $p->id) }}" 
-                               class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                               Payer
-                            </a>
+                           <a href="{{ route('paiements.show', $p->id) }}" class="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 transition">
+                            Voir plus
+                                </a>
+
                         </div>
                     </div>
                 </div>

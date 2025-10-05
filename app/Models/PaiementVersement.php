@@ -14,7 +14,9 @@ class PaiementVersement extends Model
         'paiement_id',
         'montant',
         'commentaire',
-        'date_versement'
+        'date_versement',
+        'nombre_versements',
+        'statut_versement'
     ];
 
     // Clé primaire non incrémentée

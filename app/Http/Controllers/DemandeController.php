@@ -286,7 +286,7 @@ public function validerDAF($id)
         }
 
         return redirect()->route('demandes.enAttenteDaf')
-                         ->with('success', 'Demande validée et envoyée aux DG de l’entité (CC : initiateur, contrôleur).');
+                         ->with('success', 'Demande validée et envoyée aux DG de l’entité ');
     }
 
     return redirect()->route('demandes.enAttenteDaf')

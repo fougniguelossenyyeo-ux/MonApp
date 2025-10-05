@@ -64,7 +64,8 @@
                         <p><strong>Montant total :</strong> {{ number_format($paiement->montant_a_payer,0,',',' ') }} F CFA</p>
                         <p><strong>Montant déjà payé :</strong> {{ number_format($paiement->montant_deja_paye,0,',',' ') }} F CFA</p>
                         <p><strong>Montant restant :</strong> {{ number_format($paiement->montant_restant,0,',',' ') }} F CFA</p>
-                        <p><strong>Date de paiement souhaitée :</strong> {{ $paiement->demande->date_paiement?->format('d/m/Y') }}</p>
+                   <p><strong>Montant de paiement souhaité :</strong> {{ number_format($versement->montant, 0, ',', ' ') }} F CFA</p>
+
                     </div>
 
                 </div>
@@ -72,7 +73,10 @@
 
             <!-- Lien de validation -->
             <div class="mb-6 text-center">
-                <a href="{{ route('dg.valider_paiement', $paiement->id) }}" class="btn">Valider ou Refuser le paiement</a>
+                <!-- Nouveau lien -->
+                 <a href="{{ route('paiements.dg_valider', $paiement->id) }}" class="btn">
+                   Valider ou Refuser le paiement
+                     </a>
             </div>
         </div>
 

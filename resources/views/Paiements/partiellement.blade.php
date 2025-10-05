@@ -115,7 +115,7 @@
                         </div>
 
                         <div class="flex items-center">
-                            <a href="{{ route('paiements.payer', $p->id) }}" 
+                            <a href="{{ route('paiements.shown', $p->id) }}" 
                                class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
                                 Payer le reste
                             </a>

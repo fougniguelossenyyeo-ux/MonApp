@@ -18,6 +18,8 @@ return new class extends Migration
             $table->decimal('montant', 15, 2); // Montant versé
             $table->timestamp('date_versement')->useCurrent(); // Date du versement
             $table->string('commentaire')->nullable(); // Commentaire optionnel
+            $table->string('statut_versement')->default('en_attente'); // valeurs possibles : valide, refuse et en attente
+
             $table->timestamps();
 
             // Clé étrangère vers paiements

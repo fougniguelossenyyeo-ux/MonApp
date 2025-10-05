@@ -48,7 +48,7 @@ class Paiement extends Model
      * Relation vers les versements associés
      * Cette relation permet de récupérer tous les versements d'un paiement
      */
-    public function Versements()
+    public function paiementsVersements()
     {
         return $this->hasMany(PaiementVersement::class, 'paiement_id', 'id');
     }

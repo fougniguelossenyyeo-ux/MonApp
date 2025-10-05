@@ -1,4 +1,5 @@
 @extends('layouts.template')
+
 @section('maincontent')
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -16,15 +17,15 @@
                     class="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                 >
                 <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-r-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center text-sm">
-                    <i class="fas fa-search"></i>
+                    <i class="fas fa-search mr-2"></i> Rechercher
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Message d'erreur si aucune demande -->
+    <!-- Message d'erreur -->
     @if(isset($error))
-        <div class="bg-red-100 text-red-700 p-4 rounded mb-6">
+        <div class="bg-red-100 text-red-700 p-4 rounded mb-6 text-center font-medium">
             {{ $error }}
         </div>
     @endif
@@ -32,90 +33,44 @@
     <!-- Si une demande est trouvée -->
     @if($demande)
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informations de la Demande de Paiement</h2>
+
+        <!-- Titre -->
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">
+            Informations de la Demande de Paiement
+        </h2>
         
+        <!-- Informations principales -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Infos principales -->
             <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-gray-500">Numéro de DP</p>
-                    <p class="font-medium">{{ $demande->reference_dp }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Dénomination</p>
-                    <p class="font-medium">{{ $demande->denomination }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Fournisseur</p>
-                    <p class="font-medium">{{ $demande->nom_fournisseur }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Montant TTC</p>
-                    <p class="font-medium">{{ number_format($montantTotal, 0, ',', ' ') }} F CFA</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Date de paiement souhaitée</p>
-                    <p class="font-medium">{{ \Carbon\Carbon::parse($demande->date_paiement)->format('d/m/Y') }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Contact Fournisseur</p>
-                    <p class="font-medium">{{ $demande->contact_fournisseur }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Adresse Fournisseur</p>
-                    <p class="font-medium">{{ $demande->adresse_fournisseur }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Email Fournisseur</p>
-                    <p class="font-medium">{{ $demande->email_fournisseur }}</p>
-                </div>
+                <div><p class="text-sm text-gray-500">Numéro de DP</p><p class="font-medium">{{ $demande->reference_dp }}</p></div>
+                <div><p class="text-sm text-gray-500">Dénomination</p><p class="font-medium">{{ $demande->denomination }}</p></div>
+                <div><p class="text-sm text-gray-500">Fournisseur</p><p class="font-medium">{{ $demande->nom_fournisseur }}</p></div>
+                <div><p class="text-sm text-gray-500">Montant TTC</p><p class="font-medium">{{ number_format($montantTotal, 0, ',', ' ') }} F CFA</p></div>
+                <div><p class="text-sm text-gray-500">Date de paiement souhaitée</p><p class="font-medium">{{ \Carbon\Carbon::parse($demande->date_paiement)->format('d/m/Y') }}</p></div>
+                <div><p class="text-sm text-gray-500">Contact Fournisseur</p><p class="font-medium">{{ $demande->contact_fournisseur }}</p></div>
+                <div><p class="text-sm text-gray-500">Adresse Fournisseur</p><p class="font-medium">{{ $demande->adresse_fournisseur }}</p></div>
+                <div><p class="text-sm text-gray-500">Email Fournisseur</p><p class="font-medium">{{ $demande->email_fournisseur }}</p></div>
             </div>
 
-            <!-- Autres infos -->
             <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-gray-500">Référence Facture</p>
-                    <p class="font-medium">{{ $demande->reference_facture ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Référence Bon de Commande</p>
-                    <p class="font-medium">{{ $demande->reference_bon_commande ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Référence Contrat</p>
-                    <p class="font-medium">{{ $demande->reference_contrat ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Référence Expression de Besoin</p>
-                    <p class="font-medium">{{ $demande->reference_expression_besoin ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Code Fournisseur</p>
-                    <p class="font-medium">{{ $demande->code_fournisseur ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Code Analytique</p>
-                    <p class="font-medium">{{ $demande->code_analytique ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Centre Analytique</p>
-                    <p class="font-medium">{{ $demande->centre_analytique ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Code Projet</p>
-                    <p class="font-medium">{{ $demande->code_projet ?? '-' }}</p>
-                </div>
+                <div><p class="text-sm text-gray-500">Référence Facture</p><p class="font-medium">{{ $demande->reference_facture ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Référence Bon de Commande</p><p class="font-medium">{{ $demande->reference_bon_commande ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Référence Contrat</p><p class="font-medium">{{ $demande->reference_contrat ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Référence Expression de Besoin</p><p class="font-medium">{{ $demande->reference_expression_besoin ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Code Fournisseur</p><p class="font-medium">{{ $demande->code_fournisseur ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Code Analytique</p><p class="font-medium">{{ $demande->code_analytique ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Centre Analytique</p><p class="font-medium">{{ $demande->centre_analytique ?? '-' }}</p></div>
+                <div><p class="text-sm text-gray-500">Code Projet</p><p class="font-medium">{{ $demande->code_projet ?? '-' }}</p></div>
             </div>
         </div>
 
-        <!-- Objet + Priorité -->
-        <div class="mt-6">
-            <div>
-                <p class="text-sm text-gray-500">Objet de la Dépense</p>
-                <p class="font-medium">{{ $demande->description ?? 'N/A' }}</p>
-            </div>
+        <!-- Objet et Priorité -->
+        <div class="mt-6 border-t border-gray-200 pt-4">
+            <p class="text-sm text-gray-500 mb-1">Objet de la Dépense</p>
+            <p class="font-medium">{{ $demande->description ?? 'N/A' }}</p>
+
             <div class="mt-4">
-                <p class="text-sm text-gray-500">Priorité</p>
+                <p class="text-sm text-gray-500 mb-1">Priorité</p>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                     @if($demande->priorite === 'urgent') bg-red-100 text-red-800
                     @elseif($demande->priorite === 'tres_urgent') bg-red-600 text-white
@@ -125,7 +80,7 @@
             </div>
         </div>
 
-        <!-- Paiement -->
+        <!-- Bloc Paiement -->
         <div class="mt-8 pt-6 border-t border-gray-200">
             <div class="space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -143,9 +98,14 @@
                     </div>
                 </div>
 
-                @if($paiement->status_paiement == 3)
+                {{-- Conditions de validation et de paiement --}}
+                @if($demande->status != 3)
+                    <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
+                        ⚠️ Cette demande n’a pas encore été totalement validée. Le paiement ne peut pas être effectué.
+                    </div>
+                @elseif($paiement->status_paiement == 3)
                     <div class="mt-6 text-center">
-                        <p class="text-green-600 font-semibold text-lg">Tout le paiement est déjà effectué ✅</p>
+                        <p class="text-green-600 font-semibold text-lg">✅ Tout le paiement est déjà effectué</p>
                         <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium mt-4 cursor-not-allowed">
                             Paiement effectué
                         </button>
@@ -157,10 +117,11 @@
                             <label for="paymentAmount" class="block text-sm font-medium text-gray-700 mb-2">Montant à payer</label>
                             <input 
                                 type="number" 
-                                name="montant_a_payer"
+                                name="montant"
                                 min="0"
                                 max="{{ $montantRestant }}"
                                 value="{{ $montantRestant }}"
+                                required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                             >
                         </div>

@@ -146,6 +146,10 @@ Route::post('/paiements/dg-valider/{id}', [PaiementController::class, 'validerDG
 // Action pour refuser le paiement par le DG
 Route::post('/paiements/dg-refuser/{id}', [PaiementController::class, 'refuserDG'])->name('paiements.refuserDG');
 
+Route::get('/paiements/{paiement}', [PaiementController::class, 'shown'])->name('paiements.shown');
+
+Route::get('/paiements/{id}/show', [PaiementController::class, 'show'])->name('paiements.show');
+
 
  
 });
