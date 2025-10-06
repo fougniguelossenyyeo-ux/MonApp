@@ -77,62 +77,100 @@ class PaiementController extends Controller
     }
 
     /** Recherche d'une demande */
-    public function search(Request $request)
-    {
-        $reference = $request->input('reference_dp');
-        $demande = Demande::where('reference_dp', $reference)->first();
+ public function search(Request $request)
+{
+    $reference = $request->input('reference_dp');
+    $demande = Demande::where('reference_dp', $reference)->first();
 
-        if (!$demande) {
-            return view('paiements.faire_paiement', [
-                'error' => "Aucune demande trouvée avec cette référence.",
-                'demande' => null,
-                'paiement' => null,
-                'statuts' => $this->statutsPaiement,
-                'montantTotal' => 0,
-                'montantDejaPaye' => 0,
-                'montantRestant' => 0
-            ]);
-        }
-
-        if ($demande->status != 3) {
-            $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
-            return view('paiements.faire_paiement', [
-                'error' => "Cette demande n'est pas encore validée.",
-                'demande' => $demande,
-                'paiement' => null,
-                'statuts' => $this->statutsPaiement,
-                'montantTotal' => $montantTotal,
-                'montantDejaPaye' => 0,
-                'montantRestant' => $montantTotal
-            ]);
-        }
-
-        $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
-
-        // Créer ou récupérer le paiement
-        $paiement = Paiement::firstOrCreate(
-            ['demande_id' => $demande->id],
-            [
-                'montant_deja_paye' => 0,
-                'montant_a_payer' => $montantTotal,
-                'montant_restant' => $montantTotal,
-                'status_paiement' => 1 // En cours dès le lancement
-            ]
-        );
-
-        $this->recalculerMontantsEtStatut($paiement);
-
+    // 1️⃣ Si la demande n'existe pas
+    if (!$demande) {
         return view('paiements.faire_paiement', [
-            'demande' => $demande,
-            'paiement' => $paiement,
-            'error' => null,
+            'error' => "Aucune demande trouvée avec cette référence.",
+            'demande' => null,
+            'paiement' => null,
             'statuts' => $this->statutsPaiement,
-            'montantTotal' => $paiement->montant_a_payer,
-            'montantDejaPaye' => $paiement->montant_deja_paye,
-            'montantRestant' => $paiement->montant_restant,
-            'nombreVersements' => $paiement->paiementsVersements()->count()
+            'montantTotal' => 0,
+            'montantDejaPaye' => 0,
+            'montantRestant' => 0
         ]);
     }
+
+    // 2️⃣ Si la demande n'est pas validée (status ≠ 3)
+    if ($demande->status != 3) {
+        $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
+        return view('paiements.faire_paiement', [
+            'error' => "Cette demande n'est pas encore validée.",
+            'demande' => $demande,
+            'paiement' => null,
+            'statuts' => $this->statutsPaiement,
+            'montantTotal' => $montantTotal,
+            'montantDejaPaye' => 0,
+            'montantRestant' => $montantTotal
+        ]);
+    }
+
+    // 3️⃣ Vérifie s’il existe un paiement déjà finalisé (totalement payé)
+    $paiementTermine = Paiement::where('demande_id', $demande->id)
+        ->where('status_paiement', 3) // 3 = Terminé
+        ->first();
+
+    if ($paiementTermine && $paiementTermine->montant_restant <= 0) {
+        return view('paiements.faire_paiement', [
+            'error' => "✅ Cette demande a déjà été totalement payée. Aucun autre paiement n’est possible.",
+            'demande' => $demande,
+            'paiement' => $paiementTermine,
+            'statuts' => $this->statutsPaiement,
+            'montantTotal' => $paiementTermine->montant_a_payer,
+            'montantDejaPaye' => $paiementTermine->montant_deja_paye,
+            'montantRestant' => 0,
+            'nombreVersements' => $paiementTermine->paiementsVersements()->count()
+        ]);
+    }
+
+    // 4️⃣ Vérifie s’il existe déjà un paiement EN COURS
+    $paiementEnCours = Paiement::where('demande_id', $demande->id)
+        ->where('status_paiement', 1) // 1 = En cours
+        ->first();
+
+    if ($paiementEnCours) {
+        return view('paiements.faire_paiement', [
+            'error' => "⏳ Un paiement est déjà en cours pour cette demande. Vous ne pouvez pas en lancer un autre tant qu'il n'est pas terminé.",
+            'demande' => $demande,
+            'paiement' => $paiementEnCours,
+            'statuts' => $this->statutsPaiement,
+            'montantTotal' => $paiementEnCours->montant_a_payer,
+            'montantDejaPaye' => $paiementEnCours->montant_deja_paye,
+            'montantRestant' => $paiementEnCours->montant_restant,
+            'nombreVersements' => $paiementEnCours->paiementsVersements()->count()
+        ]);
+    }
+
+    // 5️⃣ Aucun paiement en cours ni terminé → création d’un nouveau
+    $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
+
+    $paiement = Paiement::create([
+        'demande_id' => $demande->id,
+        'montant_deja_paye' => 0,
+        'montant_a_payer' => $montantTotal,
+        'montant_restant' => $montantTotal,
+        'status_paiement' => 1, // 1 = En cours
+    ]);
+
+    // Met à jour les montants et le statut du paiement
+    $this->recalculerMontantsEtStatut($paiement);
+
+    return view('paiements.faire_paiement', [
+        'demande' => $demande,
+        'paiement' => $paiement,
+        'error' => null,
+        'statuts' => $this->statutsPaiement,
+        'montantTotal' => $paiement->montant_a_payer,
+        'montantDejaPaye' => $paiement->montant_deja_paye,
+        'montantRestant' => $paiement->montant_restant,
+        'nombreVersements' => $paiement->paiementsVersements()->count()
+    ]);
+}
+
 
     /** Enregistrer un nouveau versement */
     public function payer(Request $request, $paiementId)
@@ -235,19 +273,35 @@ public function validerDG($id)
     }
 
     /** Notification DG */
-    private function notifierDG(Paiement $paiement)
-    {
-        $roleDG = Role::where('libelle', 'DG')
-            ->where('entite_id', $paiement->demande->entite_id)
-            ->first();
+   
+protected function notifierDG(Paiement $paiement)
+{
+    // On récupère le dernier versement en attente
+    $dernierVersement = $paiement->paiementsVersements()
+        ->where('statut_versement', 'en_attente')
+        ->latest('created_at')
+        ->first();
 
-        if (!$roleDG) return;
-
-        $dgList = User::where('role_id', $roleDG->id)->get();
-        foreach ($dgList as $dg) {
-            Mail::to($dg->email)->send(new PaiementAValiderMail($paiement));
-        }
+    if (!$dernierVersement) {
+        return; // Aucun versement à notifier
     }
+
+    // On récupère le DG de l'entité
+    $dgRole = \App\Models\Role::where('libelle', 'DG')
+        ->where('entite_id', $paiement->demande->entite_id)
+        ->first();
+
+    if (!$dgRole) {
+        return;
+    }
+
+    $dgs =User::where('role_id', $dgRole->id)->get();
+
+    // Envoi du mail à chaque DG
+    foreach ($dgs as $dg) {
+        Mail::to($dg->email)->send(new PaiementAValiderMail($paiement, $dernierVersement));
+    }
+}
 
     /** Affichage détail d’un paiement */
     public function show($id)

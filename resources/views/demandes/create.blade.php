@@ -207,7 +207,7 @@
 
                 <!-- Step 3: Pièces jointes -->
                 <div class="form-step hidden mt-8">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Pièces jointes maximum 20MB</h2>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-6">Pièces jointes maximum 100MB</h2>
                     <div class="flex items-center">
                         <input type="file" name="pieces_jointes[]" id="fileInput" multiple class="hidden" accept="application/pdf">
                         <button type="button" id="fileButton"

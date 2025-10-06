@@ -159,7 +159,7 @@
 
     <!-- Bouton Imprimer -->
     <a href="{{ route('demandes.imprimer', $demande->id) }}" 
-       class="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">
+      target="_blank" class="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">
         <i class="fas fa-print mr-2"></i> Imprimer la demande
     </a>
 </div>

@@ -71,7 +71,7 @@ public function store(Request $request)
             'centre_analytique' => 'nullable|string|max:255',
             'code_projet' => 'nullable|string|max:255',
             'priorite' => 'nullable|string|in:normal,urgent,tres_urgent',
-            'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:20480',
+            'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:102400',
         ]);
 
         // Calcul du montant TTC
