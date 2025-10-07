@@ -6,6 +6,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\EntiteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\PaiementController;
+use App\Http\Controllers\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -49,9 +50,7 @@ Route::delete('/users/{id}', [AuthController::class, 'destroy'])->name('users.de
 
 Route::get('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 // Dashboard (protégé)
-Route::get('/dashboard', [AdminController::class, 'index'])
-    ->middleware('auth')
-    ->name('dashboard');
+
     //roles
  Route::middleware('auth')->group(function () {
     
@@ -61,6 +60,7 @@ Route::get('/dashboard', [AdminController::class, 'index'])
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit'); // formulaire édition
     Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update'); // mise à jour
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy'); // suppression
+    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
 });
 
 //entite
@@ -150,6 +150,7 @@ Route::get('/paiements/{paiement}', [PaiementController::class, 'shown'])->name(
 
 Route::get('/paiements/{id}/show', [PaiementController::class, 'show'])->name('paiements.show');
 
+//Dashoborard
 
  
 });

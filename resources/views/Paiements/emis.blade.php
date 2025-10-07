@@ -1,7 +1,13 @@
 @extends('layouts.template')
 @section('maincontent')
 
-@include('layouts.paiement')
+@include('layouts.paiement', [
+    'totalEmis' => $totalEmis,
+    'totalEncours' => $totalEncours,
+    'totalPartiels' => $totalPartiels,
+    'totalValide' => $totalValide,
+])
+
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">

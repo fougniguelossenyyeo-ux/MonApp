@@ -318,63 +318,256 @@ protected function notifierDG(Paiement $paiement)
 
     /** Paiements émis (partiels ou soldés) */
     public function emis()
-    {
-        $paiements = Paiement::with('demande')
-            ->whereIn('status_paiement', [2, 3])
-            ->orderByDesc('created_at')
-            ->paginate(12);
+{
+    // Paiements émis (tous les versements hors refusés)
+    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
+        ->sum('montant');
 
-        return view('paiements.emis', compact('paiements'));
-    }
+    // Paiements en cours (versements en attente)
+    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
+        ->sum('montant');
 
-    /** Paiements en cours (attente DG, demandes validées) */
-    public function encours()
-    {
-        $paiements = Paiement::with(['demande', 'paiementsVersements'])
-            ->whereHas('paiementsVersements', function ($query) {
-                $query->where('statut_versement', 'en_attente');
-            })
-            ->whereHas('demande', function ($query) {
-                $query->where('status', 3); // demande validée
-            })
-            ->latest()
-            ->paginate(12);
-
-        foreach ($paiements as $paiement) {
-            $paiement->montantDejaPaye = $paiement->paiementsVersements()
+    // Paiements partiels : somme de tous les paiements déjà versés mais non complets
+    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
                 ->where('statut_versement', 'valide')
                 ->sum('montant');
-            $paiement->montantRestant = max(0, $paiement->montant_a_payer - $paiement->montantDejaPaye);
+            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+        });
 
-            $paiement->versementsEnAttente = $paiement->paiementsVersements()
-                ->where('statut_versement', 'en_attente')
-                ->get();
-        }
+    // Paiements totalement validés : somme des paiements complètement réglés
+    $totalValide = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->demande->montant_paiement_fournisseur;
+        });
 
-        return view('paiements.encours', compact('paiements'));
+    // Liste des paiements émis
+    $paiements = Paiement::with('demande')
+        ->whereIn('status_paiement', [2, 3])
+        ->orderByDesc('created_at')
+        ->paginate(12);
+
+    return view('paiements.emis', compact(
+        'paiements',
+        'totalEmis',
+        'totalEncours',
+        'totalPartiels',
+        'totalValide'
+    ));
+}
+
+    /** Paiements en cours (attente DG, demandes validées) */
+  public function encours()
+{
+    $paiements = Paiement::with(['demande', 'paiementsVersements'])
+        ->whereHas('paiementsVersements', function ($query) {
+            $query->where('statut_versement', 'en_attente');
+        })
+        ->whereHas('demande', function ($query) {
+            $query->where('status', 3); // demande validée
+        })
+        ->latest()
+        ->paginate(12);
+
+    foreach ($paiements as $paiement) {
+        $paiement->montantDejaPaye = $paiement->paiementsVersements()
+            ->where('statut_versement', 'valide')
+            ->sum('montant');
+        $paiement->montantRestant = max(0, $paiement->montant_a_payer - $paiement->montantDejaPaye);
+
+        $paiement->versementsEnAttente = $paiement->paiementsVersements()
+            ->where('statut_versement', 'en_attente')
+            ->get();
     }
+
+    // -------------------------
+    //  Calcul des totaux pour le layout
+    // -------------------------
+
+    // 1️Paiements émis (tous les versements hors refusés)
+    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
+        ->sum('montant');
+
+    // 2️ Paiements en cours (versements en attente)
+    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
+        ->sum('montant');
+
+    // 3️Paiements partiels
+    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+        });
+
+    // 4️ Paiements totalement validés
+    $totalValide = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->demande->montant_paiement_fournisseur;
+        });
+
+    // -------------------------
+    //  Retour de la vue avec les variables nécessaires
+    // -------------------------
+    return view('paiements.encours', compact(
+        'paiements',
+        'totalEmis',
+        'totalEncours',
+        'totalPartiels',
+        'totalValide'
+    ));
+}
+
 
     /** Paiements partiellement payés */
-    public function partiellement()
-    {
-        $paiements = Paiement::with('demande')
-            ->where('status_paiement', 2)
-            ->latest()
-            ->paginate(12);
+   public function partiellement()
+{
+    $paiements = Paiement::with('demande')
+        ->where('status_paiement', 2)
+        ->latest()
+        ->paginate(12);
 
-        return view('paiements.partiellement', compact('paiements'));
-    }
+    // -------------------------
+    //  Calcul des totaux pour le layout
+    // -------------------------
+
+    // 1️ Total des paiements émis (tous les versements valides ou en attente)
+    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
+        ->sum('montant');
+
+    // 2 Total des paiements en cours (versements en attente)
+    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
+        ->sum('montant');
+
+    // 3️Total des paiements partiels (sommes déjà versées mais non complètes)
+    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+        });
+
+    // 4️ Total des paiements totalement validés (montant fournisseur égal au total des versements)
+    $totalValide = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->demande->montant_paiement_fournisseur;
+        });
+
+    // -------------------------
+    //  Retour de la vue avec les totaux
+    // -------------------------
+    return view('paiements.partiellement', compact(
+        'paiements',
+        'totalEmis',
+        'totalEncours',
+        'totalPartiels',
+        'totalValide'
+    ));
+}
+
 
     /** Paiements soldés */
-    public function valides()
-    {
-        $paiements = Paiement::with('demande')
-            ->where('status_paiement', 3)
-            ->latest()
-            ->paginate(12);
+   public function valides()
+{
+    $paiements = Paiement::with('demande')
+        ->where('status_paiement', 3)
+        ->latest()
+        ->paginate(12);
 
-        return view('paiements.valides', compact('paiements'));
-    }
+    // -------------------------
+    //  Calcul des totaux pour le layout
+    // -------------------------
+
+    // 1️ Total des paiements émis (versements valides + en attente)
+    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
+        ->sum('montant');
+
+    // 2️ Total des paiements en cours (en attente de validation)
+    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
+        ->sum('montant');
+
+    // 3️ Total des paiements partiels (versés mais pas encore complets)
+    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+        });
+
+    // 4️ Total des paiements complètement validés
+    $totalValide = Paiement::with('paiementsVersements', 'demande')
+        ->get()
+        ->filter(function ($paiement) {
+            $totalVerse = $paiement->paiementsVersements()
+                ->where('statut_versement', 'valide')
+                ->sum('montant');
+            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
+        })
+        ->sum(function ($paiement) {
+            return $paiement->demande->montant_paiement_fournisseur;
+        });
+
+    // -------------------------
+    // Retour de la vue avec les totaux
+    // -------------------------
+    return view('paiements.valides', compact(
+        'paiements',
+        'totalEmis',
+        'totalEncours',
+        'totalPartiels',
+        'totalValide'
+    ));
+}
+
 
     /** Affiche le paiement à valider par le DG avec l'historique des versements */
     public function dgValider($id)
@@ -437,6 +630,16 @@ public function shown($id)
         'historiqueVersements' => $historiqueVersements,
     ]);
 }
+
+
+
+
+//layout paiement
+
+   
+
+
+
 
 
 }
