@@ -23,16 +23,38 @@ class DemandeController extends Controller
     /**
      * Liste toutes les demandes
      */
-    public function index()
-    {
-        // On récupère les demandes avec les relations entite et user
-        $demandes = Demande::with(['entite', 'user'])
-            ->orderByDesc('created_at')
-            ->paginate(12); // Pagination 10 par page
+ public function index()
+{
+    // 1️ Récupération des demandes avec relations
+    $demandes = Demande::with(['entite', 'user'])
+        ->orderByDesc('created_at')
+        ->paginate(12); // Pagination 12 par page
 
-        // On retourne la vue avec les demandes
-        return view('demandes.index', compact('demandes'));
-    }
+    // 2️ Calcul des totaux par statut (hors refusés)
+    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
+    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
+    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
+
+    // 3️ Calcul du taux de traitement
+    $tauxTraitement = $totalDemandes > 0
+        ? round(($totalValide / $totalDemandes) * 100, 2)
+        : 0;
+
+    // 4️ Retour de la vue avec toutes les variables pour le dashboard
+    return view('demandes.index', compact(
+        'demandes',
+        'totalDemandes',
+        'totalEnAttenteControleur',
+        'totalEnAttenteDaf',
+        'totalEnAttenteDirecteur',
+        'totalValide',
+        'tauxTraitement'
+    ));
+}
+
+
 
 
     /**
@@ -159,10 +181,29 @@ public function enattenteControl()
         ->orderBy('created_at', 'desc')
         ->paginate(12);
 
-    return view('demandes.controleur', compact('demandes'));
+    // Calculs pour le dashboard
+    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
+    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
+    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
 
-   
+    // Taux de traitement (exemple simple)
+    $tauxTraitement = $totalDemandes > 0 
+        ? round(($totalValide / $totalDemandes) * 100, 2) 
+        : 0;
+
+    return view('demandes.controleur', compact(
+        'demandes',
+        'totalDemandes',
+        'totalEnAttenteControleur',
+        'totalEnAttenteDaf',
+        'totalEnAttenteDirecteur',
+        'totalValide',
+        'tauxTraitement'
+    ));
 }
+
 public function showEnAttenteControl($id)
 {
     // On récupère uniquement une demande avec statut = 0
@@ -234,9 +275,30 @@ public function enAttenteDaf()
         ->orderByDesc('created_at')
         ->paginate(12);
 
-    // Vue LISTE
-    return view('demandes.daf', compact('demandes'));
+    // Calculs pour le dashboard
+    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
+    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
+    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
+
+    // Taux de traitement (exemple simple)
+    $tauxTraitement = $totalDemandes > 0 
+        ? round(($totalValide / $totalDemandes) * 100, 2) 
+        : 0;
+
+    // Vue LISTE avec dashboard
+    return view('demandes.daf', compact(
+        'demandes',
+        'totalDemandes',
+        'totalEnAttenteControleur',
+        'totalEnAttenteDaf',
+        'totalEnAttenteDirecteur',
+        'totalValide',
+        'tauxTraitement'
+    ));
 }
+
 
 public function showEnAttenteDaf($id)
 {
@@ -322,13 +384,36 @@ public function refuserDaf($id)
 // Liste des demandes en attente Directeur
 public function enAttenteDirecteur()
 {
+    // Liste paginée des demandes en attente Directeur
     $demandes = Demande::with(['entite', 'user'])
         ->where('status', 2) // status 2 = en attente Directeur
         ->orderByDesc('created_at')
         ->paginate(12);
 
-    return view('demandes.directeur', compact('demandes'));
+    // Calculs pour le dashboard
+    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
+    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
+    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
+
+    // Taux de traitement (exemple simple)
+    $tauxTraitement = $totalDemandes > 0 
+        ? round(($totalValide / $totalDemandes) * 100, 2) 
+        : 0;
+
+    // Retour de la vue avec dashboard
+    return view('demandes.directeur', compact(
+        'demandes',
+        'totalDemandes',
+        'totalEnAttenteControleur',
+        'totalEnAttenteDaf',
+        'totalEnAttenteDirecteur',
+        'totalValide',
+        'tauxTraitement'
+    ));
 }
+
 
 // Détail d'une demande en attente Directeur
 public function showEnAttenteDirecteur($id)
@@ -425,15 +510,35 @@ public function RefuserDirecteur($id)
 // Afficher les demandes validées par le DG
 public function valider()
 {
-    // Récupère toutes les demandes avec status = 3 (validées)
+    // Récupère toutes les demandes validées (status = 3)
     $demandes = Demande::where('status', 3)
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(12); // pagination 10 par page
+                        ->orderByDesc('created_at')
+                        ->paginate(12);
 
+    // Calculs pour le dashboard
+    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
+    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
+    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
+    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
 
-    // Retourne la vue valider.blade.php avec les demandes
-    return view('demandes.valider', compact('demandes'));
+    // Taux de traitement
+    $tauxTraitement = $totalDemandes > 0 
+        ? round(($totalValide / $totalDemandes) * 100, 2) 
+        : 0;
+
+    // Retourne la vue avec le dashboard
+    return view('demandes.valider', compact(
+        'demandes',
+        'totalDemandes',
+        'totalEnAttenteControleur',
+        'totalEnAttenteDaf',
+        'totalEnAttenteDirecteur',
+        'totalValide',
+        'tauxTraitement'
+    ));
 }
+
 public function showValider($id)
 {
     $demande = Demande::findOrFail($id);

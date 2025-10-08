@@ -77,99 +77,89 @@ class PaiementController extends Controller
     }
 
     /** Recherche d'une demande */
- public function search(Request $request)
+public function search(Request $request)
 {
     $reference = $request->input('reference_dp');
-    $demande = Demande::where('reference_dp', $reference)->first();
 
-    // 1️⃣ Si la demande n'existe pas
+    // 1️⃣ Chercher la demande validée
+    $demande = Demande::where('reference_dp', $reference)
+        ->where('status', 3)
+        ->first();
+
     if (!$demande) {
         return view('paiements.faire_paiement', [
-            'error' => "Aucune demande trouvée avec cette référence.",
+            'error' => "Aucune demande trouvée ou non encore validée.",
             'demande' => null,
             'paiement' => null,
-            'statuts' => $this->statutsPaiement,
             'montantTotal' => 0,
             'montantDejaPaye' => 0,
-            'montantRestant' => 0
-        ]);
-    }
-
-    // 2️⃣ Si la demande n'est pas validée (status ≠ 3)
-    if ($demande->status != 3) {
-        $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
-        return view('paiements.faire_paiement', [
-            'error' => "Cette demande n'est pas encore validée.",
-            'demande' => $demande,
-            'paiement' => null,
-            'statuts' => $this->statutsPaiement,
-            'montantTotal' => $montantTotal,
-            'montantDejaPaye' => 0,
-            'montantRestant' => $montantTotal
-        ]);
-    }
-
-    // 3️⃣ Vérifie s’il existe un paiement déjà finalisé (totalement payé)
-    $paiementTermine = Paiement::where('demande_id', $demande->id)
-        ->where('status_paiement', 3) // 3 = Terminé
-        ->first();
-
-    if ($paiementTermine && $paiementTermine->montant_restant <= 0) {
-        return view('paiements.faire_paiement', [
-            'error' => "✅ Cette demande a déjà été totalement payée. Aucun autre paiement n’est possible.",
-            'demande' => $demande,
-            'paiement' => $paiementTermine,
-            'statuts' => $this->statutsPaiement,
-            'montantTotal' => $paiementTermine->montant_a_payer,
-            'montantDejaPaye' => $paiementTermine->montant_deja_paye,
             'montantRestant' => 0,
-            'nombreVersements' => $paiementTermine->paiementsVersements()->count()
+            'versementEnAttente' => false
         ]);
     }
 
-    // 4️⃣ Vérifie s’il existe déjà un paiement EN COURS
-    $paiementEnCours = Paiement::where('demande_id', $demande->id)
-        ->where('status_paiement', 1) // 1 = En cours
-        ->first();
-
-    if ($paiementEnCours) {
-        return view('paiements.faire_paiement', [
-            'error' => "⏳ Un paiement est déjà en cours pour cette demande. Vous ne pouvez pas en lancer un autre tant qu'il n'est pas terminé.",
-            'demande' => $demande,
-            'paiement' => $paiementEnCours,
-            'statuts' => $this->statutsPaiement,
-            'montantTotal' => $paiementEnCours->montant_a_payer,
-            'montantDejaPaye' => $paiementEnCours->montant_deja_paye,
-            'montantRestant' => $paiementEnCours->montant_restant,
-            'nombreVersements' => $paiementEnCours->paiementsVersements()->count()
-        ]);
-    }
-
-    // 5️⃣ Aucun paiement en cours ni terminé → création d’un nouveau
     $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
 
-    $paiement = Paiement::create([
-        'demande_id' => $demande->id,
-        'montant_deja_paye' => 0,
-        'montant_a_payer' => $montantTotal,
-        'montant_restant' => $montantTotal,
-        'status_paiement' => 1, // 1 = En cours
-    ]);
+    // 2️⃣ Vérifier ou créer le paiement associé
+    $paiement = Paiement::firstOrCreate(
+        ['demande_id' => $demande->id],
+        [
+            'montant_a_payer' => $montantTotal,
+            'montant_deja_paye' => 0,
+            'montant_restant' => $montantTotal,
+            'status_paiement' => 0
+        ]
+    );
 
-    // Met à jour les montants et le statut du paiement
-    $this->recalculerMontantsEtStatut($paiement);
+    // 3️⃣ Recharger la relation pour récupérer les versements à jour
+    $paiement->load('paiementsVersements');
 
+    // 4️⃣ Recalculer montants à partir des versements validés
+    $montantDejaPaye = $paiement->paiementsVersements
+        ->where('statut_versement', 'valide')
+        ->sum('montant');
+
+    $montantRestant = max(0, $montantTotal - $montantDejaPaye);
+
+    // 5️⃣ Mettre à jour le statut global
+    if ($montantRestant <= 0) {
+        $paiement->status_paiement = 3; // payé
+    } elseif ($montantDejaPaye > 0) {
+        $paiement->status_paiement = 2; // partiellement payé
+    } else {
+        $paiement->status_paiement = 0; // non initié
+    }
+
+    $paiement->montant_deja_paye = $montantDejaPaye;
+    $paiement->montant_restant = $montantRestant;
+    $paiement->save();
+
+    // 6️⃣ Vérifier s'il y a un versement en attente
+    $versementEnAttente = $paiement->paiementsVersements
+        ->where('statut_versement', 'en_attente')
+        ->count() > 0;
+
+    // 7️⃣ Retourner la vue
     return view('paiements.faire_paiement', [
         'demande' => $demande,
         'paiement' => $paiement,
-        'error' => null,
-        'statuts' => $this->statutsPaiement,
-        'montantTotal' => $paiement->montant_a_payer,
-        'montantDejaPaye' => $paiement->montant_deja_paye,
-        'montantRestant' => $paiement->montant_restant,
-        'nombreVersements' => $paiement->paiementsVersements()->count()
+        'montantTotal' => $montantTotal,
+        'montantDejaPaye' => $montantDejaPaye,
+        'montantRestant' => $montantRestant,
+        'versementEnAttente' => $versementEnAttente,
+        'error' => null
     ]);
 }
+
+
+
+
+
+
+
+
+
+
 
 
     /** Enregistrer un nouveau versement */

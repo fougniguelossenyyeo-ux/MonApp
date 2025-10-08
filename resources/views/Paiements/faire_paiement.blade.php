@@ -1,7 +1,6 @@
 @extends('layouts.template')
 
 @section('maincontent')
-
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <!-- 🔍 Section Recherche -->
@@ -23,21 +22,19 @@
         </form>
     </div>
 
-    <!-- 🚫 Message d'erreur ou d’info -->
+    <!-- Message d'erreur -->
     @if(isset($error))
         <div class="bg-red-100 text-red-700 p-4 rounded mb-6 text-center font-medium">
             {{ $error }}
         </div>
     @endif
 
-    <!-- ✅ Si une demande est trouvée -->
+    <!-- Si une demande est trouvée -->
     @if($demande)
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
-        <!-- 🧾 Informations de la demande -->
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">
-            Informations de la Demande de Paiement
-        </h2>
+        <!-- Informations de la demande -->
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informations de la Demande de Paiement</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
@@ -63,7 +60,7 @@
             </div>
         </div>
 
-        <!-- 📋 Objet & priorité -->
+        <!-- Objet & priorité -->
         <div class="mt-6 border-t border-gray-200 pt-4">
             <p class="text-sm text-gray-500 mb-1">Objet de la Dépense</p>
             <p class="font-medium">{{ $demande->description ?? 'N/A' }}</p>
@@ -79,7 +76,7 @@
             </div>
         </div>
 
-        <!-- 💰 Bloc Paiement -->
+        <!-- Bloc Paiement -->
         <div class="mt-8 pt-6 border-t border-gray-200">
             <div class="space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -97,58 +94,59 @@
                     </div>
                 </div>
 
-                {{-- ⚙️ Conditions de paiement --}}
-                @if($demande->status != 3)
-                    <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
-                        ⚠️ Cette demande n’a pas encore été totalement validée. Le paiement ne peut pas être effectué.
-                    </div>
-
-                @elseif($paiement && $paiement->status_paiement == 1)
-                    <div class="mt-6 bg-blue-100 text-blue-800 px-4 py-3 rounded-lg text-center font-medium">
-                        ⏳ Un paiement est déjà en cours pour cette demande. Vous ne pouvez pas en lancer un autre tant qu’il n’est pas terminé.
-                    </div>
-                    <div class="mt-4 text-center">
-                        <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
-                            Paiement en cours...
-                        </button>
-                    </div>
-
-                @elseif($montantRestant <= 0 || ($paiement && $paiement->status_paiement == 3))
-                    <div class="mt-6 bg-green-100 text-green-800 px-4 py-3 rounded-lg text-center font-semibold">
-                        ✅ Cette demande a déjà été totalement payée. Aucun autre paiement n’est possible.
-                    </div>
-                    <div class="mt-4 text-center">
-                        <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
-                            Paiement terminé
-                        </button>
-                    </div>
-
-                @else
-                    <form method="POST" action="{{ route('paiements.payer', $paiement->id) }}" class="flex flex-col sm:flex-row sm:items-center gap-2 pt-4">
-                        @csrf
-                        <div class="w-full md:w-64">
-                            <label for="paymentAmount" class="block text-sm font-medium text-gray-700 mb-2">
-                                Montant à payer
-                            </label>
-                            <input 
-                                type="number" 
-                                name="montant"
-                                min="0"
-                                max="{{ $montantRestant }}"
-                                value="{{ $montantRestant }}"
-                                required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
-                            >
+                {{-- Conditions de paiement --}}
+                @if($paiement)
+                    @if($montantRestant <= 0 || $paiement->status_paiement == 3)
+                        <div class="mt-6 bg-green-100 text-green-800 px-4 py-3 rounded-lg text-center font-semibold">
+                            ✅ Cette demande a déjà été totalement payée. Aucun autre paiement n’est possible.
                         </div>
-                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center mt-6 sm:mt-7 text-sm">
-                            <i class="fas fa-money-bill-wave mr-2"></i> Effectuer le paiement
-                        </button>
-                    </form>
+                        <div class="mt-4 text-center">
+                            <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
+                                Paiement terminé
+                            </button>
+                        </div>
+
+                    @elseif(isset($versementEnAttente) && $versementEnAttente)
+                        <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
+                            ⚠️ Un versement est en attente de validation. Vous ne pouvez pas effectuer un nouveau versement.
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
+                                Paiement en attente
+                            </button>
+                        </div>
+
+                    @else
+                        <form method="POST" action="{{ route('paiements.payer', $paiement->id) }}" class="flex flex-col sm:flex-row sm:items-center gap-2 pt-4">
+                            @csrf
+                            <div class="w-full md:w-64">
+                                <label for="paymentAmount" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Montant à payer
+                                </label>
+                                <input 
+                                    type="number" 
+                                    name="montant"
+                                    min="0"
+                                    max="{{ $montantRestant }}"
+                                    value="{{ $montantRestant }}"
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                                >
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center mt-6 sm:mt-7 text-sm">
+                                <i class="fas fa-money-bill-wave mr-2"></i> Effectuer le paiement
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
+                        ⚠️ Aucun paiement disponible pour cette demande.
+                    </div>
                 @endif
+
             </div>
         </div>
     </div>
     @endif
 </main>
-
 @endsection
