@@ -23,11 +23,9 @@ return new class extends Migration
             $table->timestamps();
 
             // Clé étrangère vers paiements
-            $table
-                ->foreign('paiement_id')
-                ->references('id')
-                ->on('paiements')
-                ->onDelete('cascade');
+             $table->foreignUuid('paiement_id')
+          ->constrained('paiements')  // pointe vers paiements.id
+          ->cascadeOnDelete();        // supprime les versements si paiement supprimé
         });
     }
 

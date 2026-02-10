@@ -10,13 +10,21 @@ return new class extends Migration
     {
         Schema::create('demandes', function (Blueprint $table) {
             $table->uuid('id')->primary();
+
+            // Informations principales
             $table->string('denomination');
-            $table->uuid('entite_id');
             $table->string('reference_dp')->unique();
-            $table->decimal('montant_ht', 15, 2)->default(0); // Montant hors taxe
+
+            // Liens clés étrangères
+            $table->foreignUuid('entite_id')->constrained('entites')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+
+            // Montants
+            $table->decimal('montant_ht', 15, 2)->default(0); // Hors taxe
             $table->enum('tva', ['TVA 18%', 'TVA 0%', 'TVA sur hydrocarbure 9%'])->default('TVA 18%');
-            $table->decimal('montant_paiement_fournisseur', 15, 2)->default(0); // TTC calculé côté serveur
-            
+            $table->decimal('montant_paiement_fournisseur', 15, 2)->default(0); // TTC
+
+            // Informations fournisseur
             $table->string('contact_fournisseur', 20);
             $table->string('adresse_fournisseur');
             $table->string('email_fournisseur');
@@ -25,24 +33,26 @@ return new class extends Migration
             $table->string('reference_contrat')->nullable();
             $table->string('reference_expression_besoin')->nullable();
             $table->string('code_fournisseur')->nullable();
-            $table->text('description')->nullable();
+
+            // Analytique / projet
             $table->string('code_analytique')->nullable();
             $table->string('centre_analytique')->nullable();
             $table->string('code_projet')->nullable();
+
+            // Pièces jointes
             $table->string('pieces_jointes')->nullable();
-            $table->tinyInteger('status')->default(0);
-            $table->uuid('user_id');
-            
+
+            // Statut général de la demande
+            $table->tinyInteger('status')->default(0); // 0=Créé, 1=Contrôleur validé, 2=DAF validé, 3=DG validé
+
             // Dates de validation
             $table->timestamp('date_validation_controleur')->nullable();
             $table->timestamp('date_validation_daf')->nullable();
             $table->timestamp('date_validation_dg')->nullable();
 
-            $table->timestamps();
+            $table->text('description')->nullable(); // Optionnel, notes ou détails supplémentaires
 
-            // Clés étrangères
-            $table->foreign('entite_id')->references('id')->on('entites')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 

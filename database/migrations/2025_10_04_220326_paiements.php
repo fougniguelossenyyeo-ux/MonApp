@@ -26,7 +26,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Clé étrangère
-            $table->foreign('demande_id')->references('id')->on('demandes')->onDelete('cascade');
+          $table->foreignUuid('demande_id')->constrained('demandes')->cascadeOnDelete();
+
         });
     }
 
