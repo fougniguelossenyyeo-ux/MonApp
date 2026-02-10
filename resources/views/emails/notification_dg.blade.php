@@ -74,14 +74,6 @@
                             <p class="text-sm text-gray-500">Montant demandé</p>
                             <p class="font-medium text-gray-900 text-xl">{{ number_format($demande->montant_paiement_fournisseur,0,',',' ') }} F CFA</p>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Date de paiement souhaitée</p>
-                            <p class="font-medium text-gray-900">{{ $demande->date_paiement?->format('d/m/Y') }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Priorité</p>
-                            <p class="font-medium text-gray-900">{{ ucfirst($demande->priorite) ?? 'Normale' }}</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -89,19 +81,17 @@
             <!-- Objet de la dépense -->
             <div class="mb-8">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                    Objet de la dépense
+                    Description
                 </h2>
                 <p class="text-gray-700">{{ $demande->description ?? '-' }}</p>
             </div>
 
             <!-- Closing -->
-            <div>
-                <p class="text-gray-700 mb-4">
-                    Merci de vous connecter à l’application pour valider ou refuser cette demande.
-                </p>
-                <p class="text-gray-700 mb-4">
-                    Cordialement,
-                </p>
+             <div class="mb-6 text-center">
+                <!-- Nouveau lien -->
+                 <a href="{{ route('demandes.showEnAttenteDirecteur', $demande->id) }}" class="btn">
+                   Valider ou Refuser la demande
+                     </a>
             </div>
         </div>
 

@@ -21,12 +21,10 @@ class Demande extends Model
   protected $fillable = [
     'denomination',
     'entite_id',
-    'nom_fournisseur',
     'reference_dp',
     'montant_ht', // nouveau
     'tva',        // nouveau
     'montant_paiement_fournisseur',
-    'date_paiement',
     'contact_fournisseur',
     'adresse_fournisseur',
     'email_fournisseur',
@@ -39,7 +37,6 @@ class Demande extends Model
     'code_analytique',
     'centre_analytique',
     'code_projet',
-    'priorite',
     'pieces_jointes',
     'status',
     'user_id',

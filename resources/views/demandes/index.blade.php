@@ -92,7 +92,7 @@
                     <div class="flex justify-between items-start mb-3">
                         <div>
                             <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $a->reference_dp }}</h3>
-                            <p class="text-xs text-gray-500 mt-1">{{ $a->date_paiement?->format('d/m/Y') }}</p>
+                           
                         </div>
                     </div>
 
@@ -123,7 +123,7 @@
 
                     <!-- Dénomination & Entité -->
                     <div class="mb-3">
-                        <p class="text-gray-700 text-sm font-medium truncate">{{ $a->denomination }}</p>
+                        <p class="text-gray-700 text-sm font-medium truncate">Entité</p>
                         <div class="flex space-x-1 mt-1">
                             <span class="entity-badge bg-slate-100 text-slate-700 inline-block text-xs px-2 py-1 rounded">
                                 {{ $a->entite?->libelle_entite ?? 'non définie' }}
@@ -139,7 +139,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-gray-500">Fournisseur</p>
-                            <p class="text-xs font-medium text-gray-900"><strong> {{ $a->nom_fournisseur}}</strong></p>
+                            <p class="text-xs font-medium text-gray-900"><strong> {{ $a->denomination}}</strong></p>
                         </div>
                     </div>
                 </div>

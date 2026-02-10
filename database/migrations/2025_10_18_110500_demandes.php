@@ -11,13 +11,12 @@ return new class extends Migration
         Schema::create('demandes', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('denomination');
-            $table->string('nom_fournisseur'); // <- champ ajouté
             $table->uuid('entite_id');
             $table->string('reference_dp')->unique();
             $table->decimal('montant_ht', 15, 2)->default(0); // Montant hors taxe
-            $table->decimal('tva', 5, 2)->default(0);         // TVA en pourcentage
+            $table->enum('tva', ['TVA 18%', 'TVA 0%', 'TVA sur hydrocarbure 9%'])->default('TVA 18%');
             $table->decimal('montant_paiement_fournisseur', 15, 2)->default(0); // TTC calculé côté serveur
-            $table->date('date_paiement');
+            
             $table->string('contact_fournisseur', 20);
             $table->string('adresse_fournisseur');
             $table->string('email_fournisseur');
@@ -30,11 +29,11 @@ return new class extends Migration
             $table->string('code_analytique')->nullable();
             $table->string('centre_analytique')->nullable();
             $table->string('code_projet')->nullable();
-            $table->enum('priorite', ['normal', 'urgent', 'tres_urgent'])->default('normal');
             $table->string('pieces_jointes')->nullable();
             $table->tinyInteger('status')->default(0);
             $table->uuid('user_id');
-             // Dates de validation
+            
+            // Dates de validation
             $table->timestamp('date_validation_controleur')->nullable();
             $table->timestamp('date_validation_daf')->nullable();
             $table->timestamp('date_validation_dg')->nullable();

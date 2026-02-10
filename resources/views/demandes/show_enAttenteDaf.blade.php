@@ -161,12 +161,19 @@
     </div>
 
     <!-- Modal PDF -->
-    <div id="fileModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg shadow-lg w-4/5 h-4/5 relative">
-            <button id="closeModal" class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
-            <iframe id="pieceViewer" src="" class="w-full h-full"></iframe>
-        </div>
+   <div id="fileModal" 
+     class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999] p-4">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto relative transform transition-all duration-300 scale-100">
+        <button id="closeFileModal" 
+                class="absolute top-3 right-3 text-gray-600 hover:text-red-600 text-2xl font-bold">
+            &times;
+        </button>
+
+        <iframe id="fileFrame" src="" 
+                class="w-full h-[80vh] rounded-lg border border-gray-200 shadow-inner"></iframe>
     </div>
+</div>
 
     <!-- Action Buttons -->
     <div class="flex space-x-4 mb-6">
@@ -197,28 +204,30 @@
 document.addEventListener('DOMContentLoaded', function() {
     const viewBtns = document.querySelectorAll('.view-file-btn');
     const modal = document.getElementById('fileModal');
-    const iframe = document.getElementById('pieceViewer');
-    const closeBtn = document.getElementById('closeModal');
+    const iframe = document.getElementById('fileFrame');
+    const closeBtn = document.getElementById('closeFileModal');
 
     viewBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const file = this.dataset.file;
             iframe.src = file;
             modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); // Bloque le scroll arrière-plan
         });
     });
 
-    closeBtn.addEventListener('click', function() {
-        modal.classList.add('hidden');
-        iframe.src = '';
-    });
-
+    closeBtn.addEventListener('click', closeModal);
     window.addEventListener('click', function(e) {
         if(e.target === modal) {
-            modal.classList.add('hidden');
-            iframe.src = '';
+            closeModal();
         }
     });
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        iframe.src = '';
+        document.body.classList.remove('overflow-hidden'); // Débloque le scroll arrière-plan
+    }
 });
 </script>
 
