@@ -25,14 +25,7 @@
         </div>
     </div>
 
-    @php
-        function formatMontant($montant){
-            if($montant >= 1000000000) return round($montant/1000000000, 2).' Md';
-            if($montant >= 1000000) return round($montant/1000000, 2).' M';
-            if($montant >= 1000) return round($montant/1000, 2).' K';
-            return $montant;
-        }
-    @endphp
+ 
 
     <!-- Cartes de statistiques globales -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -44,7 +37,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Demandes totales</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $totalDemandes }}</p>
+                <p class="text-2xl font-bold text-gray-800">$totalDemandes </p>
             </div>
         </div>
 
@@ -55,7 +48,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">En attente</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $enAttente }}</p>
+                <p class="text-2xl font-bold text-gray-800"> $enAttente </p>
             </div>
         </div>
 
@@ -66,7 +59,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Validées</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $validees }}</p>
+                <p class="text-2xl font-bold text-gray-800"> $validees </p>
             </div>
         </div>
 
@@ -77,7 +70,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Montant total</p>
-                <p class="text-lg font-bold text-gray-800">{{ formatMontant($montantTotal) }} F CFA</p>
+                <p class="text-lg font-bold text-gray-800"> formatMontant($montantTotal) F CFA</p>
             </div>
         </div>
   <!-- Montant payé -->
@@ -87,7 +80,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Montant payé</p>
-                <p class="text-lg font-bold text-gray-800">{{ formatMontant($montantPaye) }} F CFA</p>
+                <p class="text-lg font-bold text-gray-800"> formatMontant($montantPaye) F CFA</p>
             </div>
         </div>
         <!-- Rejetées -->
@@ -97,7 +90,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Rejetées</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $refusees }}</p>
+                <p class="text-2xl font-bold text-gray-800"> $refusees </p>
             </div>
         </div>
 
@@ -108,7 +101,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Montant payé</p>
-                <p class="text-lg font-bold text-gray-800">{{ formatMontant($montantPaye) }} F CFA</p>
+                <p class="text-lg font-bold text-gray-800"> formatMontant($montantPaye)  F CFA</p>
             </div>
         </div>
 
@@ -119,7 +112,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm text-gray-600">Montant impayé</p>
-                <p class="text-lg font-bold text-gray-800">{{ formatMontant($montantImpayé) }} F CFA</p>
+                <p class="text-lg font-bold text-gray-800"> formatMontant($montantImpayé) F CFA</p>
             </div>
         </div>
     </div>
@@ -143,43 +136,21 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($demandesRecentes as $demande)
-                        @php
-                            $statusColors = [
-                                0 => 'bg-amber-100 text-amber-800',
-                                1 => 'bg-amber-100 text-amber-800',
-                                2 => 'bg-amber-100 text-amber-800',
-                                3 => 'bg-green-100 text-green-800',
-                                -1 => 'bg-red-100 text-red-800',
-                                -2 => 'bg-red-100 text-red-800',
-                                -3 => 'bg-red-100 text-red-800',
-                            ];
-                            $statusText = match($demande->status){
-                                 0 => 'En attente (Contrôleur)',
-                                 1 => 'En attente (DAF)',
-                                 2 => 'En attente (DG)',
-                                 3 => 'Validée',
-                                -1 => 'Rejetée (Contrôleur)',
-                                -2 => 'Rejetée (DAF)',
-                                -3 => 'Rejetée (DG)',
-                                default => 'Inconnu'
-                            };
-                            $statusClass = $statusColors[$demande->status] ?? 'bg-gray-100 text-gray-800';
-                        @endphp
+                  
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $demande->reference_dp }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $demande->denomination }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $demande->montant_paiement_fournisseur }} F CFA</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $demande->entite->libelle_entite ?? '' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">$demande->reference_dp </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"> $demande->denomination </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"> $demande->montant_paiement_fournisseur  F CFA</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"> $demande->entite->libelle_entite ?? '' </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
-                                    {{ $statusText }}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ">
+                                     $statusText 
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $demande->created_at->format('Y-m-d') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $demande->nom_fournisseur ?? '' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">$demande->created_at->format('Y-m-d') </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">$demande->nom_fournisseur ?? '' </td>
                         </tr>
-                    @endforeach
+                   
                 </tbody>
             </table>
         </div>

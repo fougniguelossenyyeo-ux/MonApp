@@ -175,7 +175,7 @@ public function store(Request $request)
 
   
     /**
-v/**
+
  * Affiche une demande
  */
 public function show(Demande $demande)

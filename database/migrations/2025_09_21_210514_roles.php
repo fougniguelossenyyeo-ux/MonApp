@@ -12,7 +12,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('libelle'); // Exemple: caissiere, controleur, daf, dg, admin
             $table->foreignUuid('entite_id')->nullable()->constrained('entites')->nullOnDelete();
+            $table->boolean('super_admin')->default(false);
             $table->timestamps();
+            
 
             // Optionnel: empêcher les doublons par entité
             $table->unique(['libelle', 'entite_id']);

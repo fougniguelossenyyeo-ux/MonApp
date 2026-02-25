@@ -2,47 +2,66 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class PaiementVersement extends Model
 {
+    use HasFactory;
+    use SoftDeletes;
+
     protected $table = 'paiement_versements';
 
-    // Champs assignables
-    protected $fillable = [
-        'paiement_id',
-        'montant',
-        'commentaire',
-        'date_versement',
-        'nombre_versements',
-        'statut_versement'
-    ];
-
-    // Clé primaire non incrémentée
+    protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    // Casting automatique
-    protected $casts = [
-        'date_versement' => 'datetime',
+    protected $fillable = [
+        'paiement_id',
+        'montant_verse',
+        'date_versement',
+        'mode_paiement',
+        'reference_paiement',
+        'commentaire',
+        'statut',
     ];
 
-    // Génération automatique d'un UUID à la création
-    protected static function boot()
-    {
-        parent::boot();
+    protected $casts = [
+        'montant_verse'     => 'decimal:2',
+        'date_versement'    => 'date',
+        'created_at'        => 'datetime',
+        'updated_at'        => 'datetime',
+        'deleted_at'        => 'datetime',
+    ];
 
-        static::creating(function ($model) {
-            if (empty($model->{$model->getKeyName()})) {
-                $model->{$model->getKeyName()} = (string) Str::uuid();
+    protected static function booted()
+    {
+        static::creating(function (PaiementVersement $versement) {
+            if (empty($versement->id)) {
+                $versement->id = (string) Str::orderedUuid();
             }
         });
     }
 
-    // Relation : un versement appartient à un paiement
+    // ────────────────────────────────────────────────
+    // Relations uniquement
+    // ────────────────────────────────────────────────
+
+    /**
+     * Le paiement auquel ce versement est rattaché
+     */
     public function paiement()
     {
         return $this->belongsTo(Paiement::class, 'paiement_id');
+    }
+
+    /**
+     * Historique des actions sur ce versement
+     */
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
     }
 }

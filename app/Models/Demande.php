@@ -4,66 +4,97 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Str;
 
 class Demande extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+    use SoftDeletes;
+    
 
-    // Nom de la table
     protected $table = 'demandes';
 
-    // Type de clé primaire
-    protected $keyType = 'string';
     public $incrementing = false;
+    protected $keyType = 'string';
 
-    // Champs qui peuvent être remplis en masse (mass assignable)
-  protected $fillable = [
-    'denomination',
-    'entite_id',
-    'reference_dp',
-    'montant_ht', // nouveau
-    'tva',        // nouveau
-    'montant_paiement_fournisseur',
-    'contact_fournisseur',
-    'adresse_fournisseur',
-    'email_fournisseur',
-    'reference_facture',
-    'reference_bon_commande',
-    'reference_contrat',
-    'reference_expression_besoin',
-    'code_fournisseur',
-    'description',
-    'code_analytique',
-    'centre_analytique',
-    'code_projet',
-    'pieces_jointes',
-    'status',
-    'user_id',
-    'date_validation_controleur',
-    'date_validation_daf',
-    'date_validation_dg',
+    protected $primaryKey = 'id'; // explicite, bonne pratique
 
-];
-
-      // Casts pour transformer les dates en objets Carbon
-    protected $casts = [
-        'date_paiement' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'date_validation_controleur' => 'datetime',
-        'date_validation_daf' => 'datetime',
-        'date_validation_dg' => 'datetime',
+    protected $fillable = [
+        'denomination',
+        'reference_dp',
+        'entite_id',
+        'user_id',
+        'montant_ht',
+        'tva',
+        'montant_paiement_fournisseur',
+        'contact_fournisseur',
+        'adresse_fournisseur',
+        'email_fournisseur',
+        'reference_facture',
+        'reference_bon_commande',
+        'reference_contrat',
+        'reference_expression_besoin',
+        'code_fournisseur',
+        'code_analytique',
+        'centre_analytique',
+        'code_projet',
+        'pieces_jointes',           // reste présent (JSON array de noms de fichiers)
+        'status',
+        'date_validation_controleur',
+        'date_validation_daf',
+        'date_validation_dg',
+        'description',
     ];
 
-    // Relations
-    public function entite()
+    protected $casts = [
+        'pieces_jointes'             => 'array',     // JSON → tableau PHP automatiquement
+        'date_validation_controleur' => 'datetime',
+        'date_validation_daf'        => 'datetime',
+        'date_validation_dg'         => 'datetime',
+    ];
+
+    protected static function booted()
     {
-        return $this->belongsTo(Entite::class);
+        static::creating(function ($demande) {
+            if (empty($demande->id)) {
+                $demande->id = (string) Str::orderedUuid();
+            }
+        });
     }
+
+    // ────────────────────────────────────────────────
+    // Relations uniquement (pas de logique métier ici)
+    // ────────────────────────────────────────────────
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function entite()
+    {
+        return $this->belongsTo(Entite::class, 'entite_id', 'id');
+    }
+
+    public function paiement()
+    {
+        return $this->hasOne(Paiement::class, 'demande_id', 'id');
+    }
+
+    public function versements()
+    {
+        return $this->hasManyThrough(
+            PaiementVersement::class,
+            Paiement::class,
+            'demande_id',
+            'paiement_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
     }
 }

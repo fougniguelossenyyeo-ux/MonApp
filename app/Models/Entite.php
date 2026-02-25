@@ -3,39 +3,79 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
+/**
+ * Entite
+ *
+ * Représente une direction, agence, filiale, département, etc. dans Kama
+ */
 class Entite extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
+    protected $table = 'entites';
 
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
         'libelle_entite',
-        'logo', // nouveau champ pour le logo
+        'logo',
     ];
 
+    /**
+     * Génération automatique d'un UUID ordonné à la création
+     * (meilleure performance d'indexation MySQL que UUIDv4 random)
+     */
     protected static function booted()
     {
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = Str::uuid()->toString();
+        static::creating(function ($entite) {
+            if (empty($entite->id)) {
+                $entite->id = (string) Str::orderedUuid();
             }
         });
     }
 
-    // Relation avec les utilisateurs
+    // ────────────────────────────────────────────────
+    // Relations
+    // ────────────────────────────────────────────────
+
+    /**
+     * Utilisateurs rattachés à cette entité
+     */
     public function users()
     {
         return $this->hasMany(User::class, 'entite_id', 'id');
     }
 
-    // Relation avec les demandes (utile pour l’impression avec logo)
+    /**
+     * Demandes de paiement initiées dans le contexte de cette entité
+     */
     public function demandes()
     {
         return $this->hasMany(Demande::class, 'entite_id', 'id');
+    }
+
+    // ────────────────────────────────────────────────
+    // Accesseurs utiles (optionnels mais très pratiques)
+    // ────────────────────────────────────────────────
+
+    /**
+     * URL publique du logo (si logo présent)
+     *
+     * @return string|null
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo) {
+            return null;
+        }
+
+        // Suppose que les logos sont dans storage/public/logos/
+        return asset('storage/logos/' . $this->logo);
     }
 }

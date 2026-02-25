@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('entites', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('libelle_entite');
-            $table->string('logo')->nullable(); // nouveau champ pour le logo
-            
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->uuid('id')->primary();             // UUID pour chaque permission
+            $table->string('nom')->unique();           // Nom de la permission (ex: creer_demande)
+            $table->string('description')->nullable(); // Description détaillée
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('entites');
+        Schema::dropIfExists('permissions');
     }
 };

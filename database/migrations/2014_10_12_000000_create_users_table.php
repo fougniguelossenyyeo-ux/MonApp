@@ -11,33 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('nom');
-            $table->string('prenom');
-            $table->string('email', 191)->unique();
-            $table->timestamp('email_verified_at')->nullable();
+    Schema::create('users', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->string('nom');
+    $table->string('prenom');
+    $table->string('email', 191)->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('poste')->nullable();
+    $table->string('password');
+    $table->string('signature', 255)->nullable();
+    $table->uuid('entite_id')->nullable(); // relation entité
+   $table->foreignUuid('role_id')->nullable()->constrained('roles')->nullOnDelete();
+    $table->rememberToken();
+    $table->timestamps();
 
-            $table->string('poste');
-            $table->string('fonction');
-            $table->string('password');
-
-            // Signature optionnelle
-            $table->string('signature')->nullable();
-
-            $table->rememberToken();
-            $table->timestamps();
-        });
-
-        // Table pivot pour gérer les rôles
-        Schema::create('role_user', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('role_id')->constrained()->cascadeOnDelete();
-            $table->timestamps();
-
-            $table->unique(['user_id', 'role_id']);
-        });
+  
+    $table->foreign('entite_id')->references('id')->on('entites')->onDelete('set null');
+});
     }
 
     /**
@@ -45,7 +35,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('role_user');
+       
         Schema::dropIfExists('users');
     }
 };

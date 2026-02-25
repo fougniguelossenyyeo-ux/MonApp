@@ -4,52 +4,70 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Paiement extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
-    // Clé primaire UUID
+    protected $table = 'paiements';
+
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    // Champs assignables
     protected $fillable = [
         'demande_id',
-        'montant_deja_paye',
-        'montant_a_payer',
+        'user_id',
+        'montant_prevu',
+        'montant_paye',
         'montant_restant',
-        'status_paiement',
+        'statut',
+        'mode_paiement',
+        'reference_paiement',
+        'date_paiement_effectif',
+        'notes',
     ];
 
-    // Génération automatique d'UUID
-    protected static function boot()
-    {
-        parent::boot();
+    protected $casts = [
+        'montant_prevu'          => 'decimal:2',
+        'montant_paye'           => 'decimal:2',
+        'montant_restant'        => 'decimal:2',
+        'date_paiement_effectif' => 'date',
+    ];
 
-        static::creating(function ($model) {
-            if (empty($model->{$model->getKeyName()})) {
-                $model->{$model->getKeyName()} = (string) Str::uuid();
+    protected static function booted()
+    {
+        static::creating(function (Paiement $paiement) {
+            if (empty($paiement->id)) {
+                $paiement->id = (string) Str::orderedUuid();
             }
         });
     }
 
-    /**
-     * Relation avec la demande
-     */
+    // ────────────────────────────────────────────────
+    // Relations uniquement (aucune logique métier ici)
+    // ────────────────────────────────────────────────
+
     public function demande()
     {
         return $this->belongsTo(Demande::class, 'demande_id');
     }
 
-    /**
-     * Relation vers les versements associés
-     * Cette relation permet de récupérer tous les versements d'un paiement
-     */
-    public function paiementsVersements()
+    public function user()
     {
-        return $this->hasMany(PaiementVersement::class, 'paiement_id', 'id');
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function versements()
+    {
+        return $this->hasMany(PaiementVersement::class, 'paiement_id');
+    }
+
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
     }
 }

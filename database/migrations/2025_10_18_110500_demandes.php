@@ -25,9 +25,9 @@ return new class extends Migration
             $table->decimal('montant_paiement_fournisseur', 15, 2)->default(0); // TTC
 
             // Informations fournisseur
-            $table->string('contact_fournisseur', 20);
+            $table->string('contact_fournisseur', 30);
             $table->string('adresse_fournisseur');
-            $table->string('email_fournisseur');
+          $table->string('email_fournisseur', 191);
             $table->string('reference_facture')->nullable();
             $table->string('reference_bon_commande')->nullable();
             $table->string('reference_contrat')->nullable();
@@ -40,7 +40,7 @@ return new class extends Migration
             $table->string('code_projet')->nullable();
 
             // Pièces jointes
-            $table->string('pieces_jointes')->nullable();
+            $table->text('pieces_jointes')->nullable();
 
             // Statut général de la demande
             $table->tinyInteger('status')->default(0); // 0=Créé, 1=Contrôleur validé, 2=DAF validé, 3=DG validé
