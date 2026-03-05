@@ -39,12 +39,14 @@
                 <span id="dashboardText">Tableau de bord</span>
             </a>
 
-            <!-- Enregistrer DP -->
-            <a href="{{ route('demandes.create') }}" 
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : '' }}">
-                <i class="fas fa-plus-circle mr-3"></i>
-                <span id="registerText">Enregistrer DP</span>
-            </a>
+    <!-- Enregistrer DP : affiché seulement si l'utilisateur a la permission 'cree_demande' -->
+@if(Auth::user()->canCreateDemande())
+    <a href="{{ route('demandes.create') }}" 
+       class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : '' }}">
+        <i class="fas fa-plus-circle mr-3"></i>
+        <span id="registerText">Enregistrer DP</span>
+    </a>
+@endif
 
             <!-- Faire un paiement -->
             <a href="{{route('paiements.index')}}" 

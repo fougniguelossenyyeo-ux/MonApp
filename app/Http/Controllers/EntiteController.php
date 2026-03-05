@@ -76,13 +76,17 @@ class EntiteController extends Controller
         return redirect()->route('entites.index')->with('success', 'Entité mise à jour.');
     }
 
-    public function destroy(Entite $entite)
-    {
-        if ($entite->logo) {
-            Storage::disk('public')->delete($entite->logo);
-        }
-
-        $entite->delete();
-        return redirect()->route('entites.index')->with('success', 'Entité supprimée.');
+  public function destroy(Entite $entite)
+{
+    if ($entite->logo) {
+        Storage::disk('public')->delete($entite->logo);
     }
+
+    // Supprime les permissions liées
+    $entite->permissions()->delete();
+
+    $entite->delete();
+
+    return redirect()->route('entites.index')->with('success', 'Entité supprimée.');
+}
 }

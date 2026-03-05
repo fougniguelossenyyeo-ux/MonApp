@@ -38,8 +38,8 @@
 
                         <!-- Logo -->
 <td class="px-6 py-4 whitespace-nowrap">
-    <img src="{{ $entite->logo ? asset('storage/' . $entite->logo) : asset('images/default-logo.png') }}" 
-         alt="Logo {{ $entite->libelle_entite }}" 
+    <img src="{{ asset('storage/'.$entite->logo) }}"
+         alt="Logo {{ $entite->libelle_entite }}"
          class="h-12 w-12 object-contain rounded border border-gray-200 shadow-sm">
 </td>
 

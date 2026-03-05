@@ -42,35 +42,40 @@ class AuthController extends Controller
     }
 
     // Traiter l'inscription
-    public function register(Request $request)
-    {
-      
-        $validated = $request->validate([
-            'nom' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'poste' => 'nullable|string|max:255',
-            'fonction' => 'nullable|string|max:255',
-            'role_id' => 'required|string|exists:roles,id',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+   public function register(Request $request)
+{
+    // Validation des champs
+    $validated = $request->validate([
+        'nom' => 'required|string|max:255',
+        'prenom' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'poste' => 'nullable|string|max:255',
+        'role_id' => 'required|string|exists:roles,id',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
 
+    try {
+        // Création de l'utilisateur
         $user = User::create([
             'nom' => $validated['nom'],
             'prenom' => $validated['prenom'],
             'email' => $validated['email'],
             'poste' => $validated['poste'] ?? null,
-            'fonction' => $validated['fonction'] ?? null,
             'role_id' => $validated['role_id'],
             'password' => Hash::make($validated['password']),
         ]);
 
-        if($user) {
-            return redirect()->route('users.list')->with('success', 'Inscription réussie');
-        } else {
-            return back()->with('error', 'Erreur lors de l’enregistrement')->withInput();
-        }
+        return redirect()->route('users.list')->with('success', 'Inscription réussie');
+
+    } catch (\Exception $e) {
+        // Log de l'erreur pour debug
+        \Log::error('Erreur création utilisateur : ' . $e->getMessage());
+
+        return back()
+            ->with('error', 'Erreur lors de l’enregistrement : ' . $e->getMessage())
+            ->withInput();
     }
+}
 
     // Liste des utilisateurs
     public function listregister()

@@ -77,6 +77,21 @@ public function hasPermission($permissionName): bool
         })
         ->exists();
 }
+// User.php
+public function canCreateDemande(): bool
+{
+    // Si super admin → toujours vrai
+    if ($this->role && $this->role->super_admin) {
+        return true;
+    }
+
+    // Vérifie si le rôle a au moins une permission 'cree_demande_...' liée à une entité
+    return $this->role
+                ? $this->role->permissions()
+                    ->where('nom', 'like', 'cree_demande_%')
+                    ->exists()
+                : false;
+}
 
     
 }

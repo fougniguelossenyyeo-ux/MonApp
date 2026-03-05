@@ -54,18 +54,7 @@
                             <input type="email" name="email" value="{{ old('email') }}" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg">
                         </div>
 
-                        <div class="mt-4">
-                            <label>Fonction</label>
-                            <select name="fonction" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg">
-                                <option value="">Sélectionnez votre fonction</option>
-                                <option value="administrateur" {{ old('fonction')=='administrateur' ? 'selected' : '' }}>Administrateur</option>
-                                <option value="daf" {{ old('fonction')=='daf' ? 'selected' : '' }}>DAF</option>
-                                <option value="controleur" {{ old('fonction')=='controleur' ? 'selected' : '' }}>Contrôleur</option>
-                                <option value="dg" {{ old('fonction')=='dg' ? 'selected' : '' }}>DG</option>
-                                <option value="caissier" {{ old('fonction')=='caissier' ? 'selected' : '' }}>Caissier(e)</option>
-                                <option value="tresorerie" {{ old('fonction')=='tresorerie' ? 'selected' : '' }}>Trésorerie</option>
-                            </select>
-                        </div>
+                      {{-- Champ fonction supprimé car non présent en base --}}
 
                         <div class="mt-4">
                             <label>Service</label>

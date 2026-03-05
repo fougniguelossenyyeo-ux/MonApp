@@ -173,7 +173,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('permissions.update');
 
     // Enregistrer les permissions
-    Route::put('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
+    Route::post('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
         ->name('permissions.save');
 
 });

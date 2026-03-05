@@ -4,18 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-/**
- * Entite
- *
- * Représente une direction, agence, filiale, département, etc. dans Kama
- */
 class Entite extends Model
 {
     use HasFactory;
-    
 
     protected $table = 'entites';
 
@@ -27,55 +21,55 @@ class Entite extends Model
         'logo',
     ];
 
-    /**
-     * Génération automatique d'un UUID ordonné à la création
-     * (meilleure performance d'indexation MySQL que UUIDv4 random)
-     */
     protected static function booted()
     {
+        // Génération d'UUID ordonné
         static::creating(function ($entite) {
             if (empty($entite->id)) {
                 $entite->id = (string) Str::orderedUuid();
             }
         });
+
+        // Supprimer logo et permissions avant suppression
+        static::deleting(function ($entite) {
+            // Supprimer logo
+            if ($entite->logo) {
+                Storage::disk('public')->delete('logos/' . $entite->logo);
+            }
+
+            // Supprimer toutes les permissions liées
+            $entite->permissions()->delete();
+        });
     }
 
-    // ────────────────────────────────────────────────
-    // Relations
-    // ────────────────────────────────────────────────
+    // ───── Relations ─────
 
-    /**
-     * Utilisateurs rattachés à cette entité
-     */
     public function users()
     {
         return $this->hasMany(User::class, 'entite_id', 'id');
     }
 
-    /**
-     * Demandes de paiement initiées dans le contexte de cette entité
-     */
     public function demandes()
     {
         return $this->hasMany(Demande::class, 'entite_id', 'id');
     }
 
-    // ────────────────────────────────────────────────
-    // Accesseurs utiles (optionnels mais très pratiques)
-    // ────────────────────────────────────────────────
-
-    /**
-     * URL publique du logo (si logo présent)
-     *
-     * @return string|null
-     */
-    public function getLogoUrlAttribute(): ?string
+    public function permissions()
     {
-        if (!$this->logo) {
-            return null;
-        }
-
-        // Suppose que les logos sont dans storage/public/logos/
-        return asset('storage/logos/' . $this->logo);
+        return $this->hasMany(Permission::class, 'entite_id', 'id');
     }
+
+    // ───── Accesseurs ─────
+
+  public function getLogoUrlAttribute(): ?string
+{
+    if (!$this->logo) {
+        return null;
+    }
+
+    // S'assurer qu'il n'y a pas de double "logos/"
+    $logoPath = preg_replace('#^logos/#', '', $this->logo);
+
+    return asset('storage/logos/' . $logoPath);
+}
 }

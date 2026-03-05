@@ -73,14 +73,12 @@ class DemandeController extends Controller
 public function store(Request $request)
 {
     try {
-        // Définition des options TVA pour le calcul
         $tvaOptions = [
             'TVA 18%' => 18,
             'TVA 0%' => 0,
             'TVA sur hydrocarbure 9%' => 9,
         ];
 
-        // Validation du formulaire
         $validated = $request->validate([
             'denomination' => 'required|string|max:255',
             'entite_id' => 'required|uuid|exists:entites,id',
@@ -101,6 +99,23 @@ public function store(Request $request)
             'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:102400',
         ]);
 
+        $entite = \App\Models\Entite::findOrFail($validated['entite_id']);
+        $permissionName = 'valider_demande_niveau1_' . Str::slug($entite->libelle_entite, '_');
+
+        // Récupération des utilisateurs ayant la permission en une seule requête
+        $validateurs = \App\Models\User::with(['role.permissions'])
+            ->where('entite_id', $entite->id)
+            ->whereHas('role.permissions', function($query) use ($permissionName) {
+                $query->where('nom', $permissionName);
+            })
+            ->get();
+
+        if ($validateurs->isEmpty()) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Impossible de créer la demande : aucun utilisateur ne peut la valider pour cette entité.');
+        }
+
         // Calcul du montant TTC
         $montantHT = $validated['montant_ht'];
         $tvaRate = $tvaOptions[$validated['tva']];
@@ -118,7 +133,6 @@ public function store(Request $request)
             $mergedFileName = 'pieces_jointes/' . $denomination . '_' . $date . '.pdf';
             $mergedFilePath = storage_path('app/public/' . $mergedFileName);
 
-            // Créer le dossier si inexistant
             if (!file_exists(dirname($mergedFilePath))) {
                 mkdir(dirname($mergedFilePath), 0755, true);
             }
@@ -126,9 +140,7 @@ public function store(Request $request)
             $pdf = new \setasign\Fpdi\Fpdi();
 
             foreach ($request->file('pieces_jointes') as $file) {
-                $filePath = $file->getRealPath();
-                $pageCount = $pdf->setSourceFile($filePath);
-
+                $pageCount = $pdf->setSourceFile($file->getRealPath());
                 for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                     $tpl = $pdf->importPage($pageNo);
                     $size = $pdf->getTemplateSize($tpl);
@@ -140,35 +152,28 @@ public function store(Request $request)
             $pdf->Output($mergedFilePath, 'F');
             $validated['pieces_jointes'] = $mergedFileName;
 
-            // Libération mémoire
             $pdf->close();
             unset($pdf);
             gc_collect_cycles();
         }
 
         // Création de la demande
-        $demande = Demande::create($validated);
+        $demande = \App\Models\Demande::create($validated);
 
-        // Notification aux contrôleurs de l'entité
-        $controleurs = User::whereHas('role.entite', function($q) use ($demande) {
-            $q->where('libelle_entite', $demande->entite->libelle_entite);
-        })->whereHas('role', function($q){
-            $q->whereRaw('LOWER(libelle) = ?', ['controleur']);
-        })->get();
-
-        foreach ($controleurs as $user) {
+        // Notification aux validateurs
+        foreach ($validateurs as $user) {
             Mail::to($user->email)
-                ->send(new NouvelleDemandeDp($demande, $controleurs));
+                ->send(new \App\Mail\NouvelleDemandeDp($demande));
         }
 
         return redirect()->route('demandes.create')
-                         ->with('success', "Demande {$demande->reference_dp} - {$demande->denomination} créée avec succès !");
+            ->with('success', "Demande {$demande->reference_dp} - {$demande->denomination} créée avec succès !");
 
     } catch (\Exception $e) {
         \Log::error('Erreur lors de la création de la demande DP : ' . $e->getMessage());
 
         return redirect()->route('demandes.create')
-                         ->with('error', 'Une erreur est survenue lors de la création de la demande. Veuillez réessayer.');
+            ->with('error', 'Une erreur est survenue lors de la création de la demande. Veuillez réessayer.');
     }
 }
 
