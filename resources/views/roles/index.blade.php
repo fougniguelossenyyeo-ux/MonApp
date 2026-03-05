@@ -43,13 +43,62 @@
                         <td class="px-6 py-4 text-sm text-gray-500">
                             {{ $role->entite->libelle_entite ?? '-' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="inline-flex items-center px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors select-role-btn"
-                                    data-role-id="{{ $role->id }}">
-                                <i class="fas fa-key mr-1"></i>
-                                Permissions
-                            </button>
-                        </td>
+                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end space-x-2">
+
+    {{-- Bouton Permissions --}}
+    @if(!$role->super_admin)
+        <a href="{{ route('permissions.edit', $role->id) }}"
+           class="inline-flex items-center px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+            <i class="fas fa-key mr-1"></i>
+            Permissions
+        </a>
+    @else
+        <button
+            class="inline-flex items-center px-3 py-1 text-sm text-white bg-blue-400 rounded-md cursor-not-allowed opacity-50"
+            title="Super Admin : permissions verrouillées"
+            disabled>
+            <i class="fas fa-key mr-1"></i>
+            Permissions
+        </button>
+    @endif
+
+
+    {{-- Bouton Modifier --}}
+    <a href="{{ route('roles.edit', $role->id) }}"
+       class="inline-flex items-center px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-colors">
+        <i class="fas fa-edit mr-1"></i>
+        Modifier
+    </a>
+
+
+    {{-- Bouton Supprimer --}}
+    @if(!$role->super_admin)
+        <form action="{{ route('roles.destroy', $role->id) }}"
+              method="POST"
+              class="delete-form inline-block"
+              data-role="{{ $role->libelle }}">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                class="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-colors">
+                <i class="fas fa-trash mr-1"></i>
+                Supprimer
+            </button>
+        </form>
+    @else
+        <button
+            class="inline-flex items-center px-3 py-1 text-sm text-red-400 bg-red-100 rounded-md cursor-not-allowed opacity-50"
+            title="Super Admin : suppression interdite"
+            disabled>
+            <i class="fas fa-trash mr-1"></i>
+            Supprimer
+        </button>
+    @endif
+
+</div>
+</td>
+
                     </tr>
                     @endforeach
                 </tbody>

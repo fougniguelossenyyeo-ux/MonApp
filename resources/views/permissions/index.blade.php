@@ -36,14 +36,14 @@
                     <option value="">— Sélectionnez un rôle —</option>
                     @foreach($roles as $role)
                         <option value="{{ $role->id }}"
-                                data-entite="{{ $role->entite?->libelle_entite ?? 'Aucune entité' }}"
+                                data-super="{{ $role->super_admin ? '1' : '0' }}"
                                 {{ old('role_id') == $role->id ? 'selected' : '' }}>
                             {{ $role->libelle }}
                             @if($role->entite)
-                                <span class="text-xs text-gray-500">({{ $role->entite->libelle_entite }})</span>
+                                ({{ $role->entite->libelle_entite }})
                             @endif
                             @if($role->super_admin)
-                                <span class="ml-1.5 text-xs font-medium text-red-600">★ Super Admin</span>
+                                ★ Super Admin
                             @endif
                         </option>
                     @endforeach
@@ -79,7 +79,7 @@
                 >
 
                 <!-- Liste des permissions groupées -->
-                <div class="max-h-[55vh] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50/70 divide-y divide-gray-100">
+                <div id="permissionsList" class="max-h-[55vh] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50/70 divide-y divide-gray-100">
                     @forelse($groupedPermissions as $groupName => $perms)
                         <div class="group-section">
                             <div class="bg-indigo-50/70 px-5 py-2.5 font-medium text-indigo-800 sticky top-0 z-10 flex justify-between items-center">
@@ -156,41 +156,55 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn   = document.getElementById('submitBtn');
     const checkboxes  = document.querySelectorAll('input[name="permissions[]"]');
 
-    // Sélection rôle
-    roleSelect.addEventListener('change', function() {
+    // Boutons "Tout sélectionner / Tout désélectionner"
+    document.getElementById('selectAll').addEventListener('click', () => {
+        checkboxes.forEach(cb => cb.checked = true);
+    });
+    document.getElementById('deselectAll').addEventListener('click', () => {
+        checkboxes.forEach(cb => cb.checked = false);
+    });
 
+    // Recherche rapide
+    document.getElementById('searchPerm').addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('#permissionsList label').forEach(label => {
+            const text = label.textContent.toLowerCase();
+            label.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    });
+
+    // Changement de rôle
+    roleSelect.addEventListener('change', function() {
         hiddenRole.value = this.value;
         submitBtn.disabled = !this.value;
 
-        // Si aucun rôle → tout décocher
+        const isSuperAdmin = this.selectedOptions[0].dataset.super === '1';
+
+        // Verrouiller tout si Super Admin
+        checkboxes.forEach(cb => cb.disabled = isSuperAdmin);
+        submitBtn.disabled = isSuperAdmin;
+
         if (!this.value) {
             checkboxes.forEach(cb => cb.checked = false);
             return;
         }
 
-        // Requête AJAX
-        fetch(`/permissions/role/${this.value}`)
+        // AJAX pour récupérer les permissions du rôle
+        fetch(`/permissions/role/${this.value}/data`)
             .then(response => response.json())
             .then(data => {
-
-                // Tout décocher
                 checkboxes.forEach(cb => cb.checked = false);
 
-                // Cocher celles du rôle
                 data.forEach(permissionId => {
                     const checkbox = document.querySelector(
                         'input[name="permissions[]"][value="' + permissionId + '"]'
                     );
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
+                    if (checkbox) checkbox.checked = true;
                 });
-
             })
             .catch(error => {
                 console.error('Erreur chargement permissions:', error);
             });
-
     });
 
 });

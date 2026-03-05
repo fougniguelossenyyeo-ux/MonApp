@@ -120,12 +120,7 @@ class PermissionController extends Controller
             ->route('permissions.index', ['role_id' => $role->id])
             ->with('success', "Les permissions du rôle « {$role->libelle} » ont été mises à jour avec succès.");
     }
-    public function getRolePermissions(Role $role)
-{
-    return response()->json(
-        $role->permissions()->pluck('permissions.id')
-    );
-}
+  
 
 // Dans PermissionController
 public function saveRolePermissions(Request $request)
@@ -161,5 +156,12 @@ public function edit($id)
     $currentPermissions = $role->permissions->pluck('id')->toArray();
 
     return view('permissions.edit', compact('role', 'groupedPermissions', 'currentPermissions'));
+}
+
+public function getRolePermissions($roleId)
+{
+    $role = Role::findOrFail($roleId);
+    $permissions = $role->permissions()->pluck('id');
+    return response()->json($permissions);
 }
 }

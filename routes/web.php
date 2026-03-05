@@ -156,19 +156,23 @@ Route::middleware('auth')->group(function () {
 // Routes de gestion des permissions (protégées par auth et vérification de permission dans le controller)
 Route::middleware(['auth'])->group(function () {
 
-    // Liste des rôles + leurs permissions (page principale)
+    // Liste des rôles + leurs permissions
     Route::get('/permissions', [PermissionController::class, 'index'])
-         ->name('permissions.index');
+        ->name('permissions.index');
 
-    // Mise à jour des permissions d’un rôle (le rôle vient du champ role_id)
+    // AJAX : récupérer les permissions d’un rôle
+    Route::get('/permissions/role/{role}/data', [PermissionController::class, 'getRolePermissions'])
+        ->name('permissions.role.data');
+
+    // Page d’édition des permissions
+    Route::get('/permissions/role/{role}', [PermissionController::class, 'edit'])
+        ->name('permissions.edit');
+
+    // Mise à jour des permissions
     Route::put('/permissions', [PermissionController::class, 'update'])
-         ->name('permissions.update');
-      
-    // Route pour afficher le formulaire d'attribution des permissions à un rôle
-   Route::get('/permissions/role/{role}/data', [PermissionController::class, 'getRolePermissions'])
-    ->name('permissions.role.data');
+        ->name('permissions.update');
 
-    // Route pour enregistrer les permissions attribuées à un rôle
+    // Enregistrer les permissions
     Route::put('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
         ->name('permissions.save');
 
