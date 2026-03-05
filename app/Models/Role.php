@@ -18,7 +18,7 @@ class Role extends Model
 
     protected $fillable = [
         'libelle', 
-        'description'
+        'entite_id',
     ];
 
     protected static function booted()
@@ -49,5 +49,9 @@ class Role extends Model
             'role_id', 
             'permission_id'
         );
+    }
+    public function entite()
+    {
+        return $this->belongsTo(Entite::class, 'entite_id');
     }
 }

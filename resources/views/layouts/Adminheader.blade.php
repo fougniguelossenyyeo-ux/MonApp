@@ -11,7 +11,7 @@
                         <h3 class="text-lg font-semibold text-indigo-600 group-hover:text-indigo-800">Gestion des utilisateurs</h3>
                         <p class="text-gray-600 mt-1">Administrer les comptes utilisateurs</p>
                     </a>
-                    <a href="#" class="flex-1 min-w-[200px] p-4 rounded-lg hover:bg-indigo-50 transition-colors group">
+                    <a href="{{route('permissions.index')}}" class="flex-1 min-w-[200px] p-4 rounded-lg hover:bg-indigo-50 transition-colors group">
                         <h3 class="text-lg font-semibold text-indigo-600 group-hover:text-indigo-800">Gestion des permissions</h3>
                         <p class="text-gray-600 mt-1">Configurer les accès et autorisations</p>
                     </a>

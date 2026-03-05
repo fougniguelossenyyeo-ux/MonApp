@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('libelle_entite');
             $table->string('logo')->nullable(); // nouveau champ pour le logo
             
+            
             $table->timestamps();
         });
     }

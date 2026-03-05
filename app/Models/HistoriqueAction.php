@@ -4,50 +4,55 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class HistoriqueAction extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, HasUuids;
 
     protected $table = 'historique_actions';
 
+    protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
+
+    public $timestamps = false; // Seulement created_at dans la migration
 
     protected $fillable = [
         'user_id',
         'action',
-        'entity_type',
-        'entity_id',
-        'details',
+        'subject_type',
+        'subject_id',
+        'properties',
+        'ip_address',
+        'user_agent',
+        'entite_id',
+        'created_at',
     ];
 
     protected $casts = [
-        'details'     => 'array',     // ou 'json' si tu préfères garder string JSON
-        'created_at'  => 'datetime',
-        'updated_at'  => 'datetime',
-        'deleted_at'  => 'datetime',
+        'properties' => 'array',
+        'created_at' => 'datetime',
     ];
 
-    protected static function booted()
-    {
-        static::creating(function ($historique) {
-            if (empty($historique->id)) {
-                $historique->id = (string) Str::orderedUuid();
-            }
-        });
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Relations
+    |--------------------------------------------------------------------------
+    */
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class);
     }
 
     public function subject()
     {
-        return $this->morphTo('subject', 'entity_type', 'entity_id');
+        return $this->morphTo();
+    }
+
+    public function entite()
+    {
+        return $this->belongsTo(Entite::class);
     }
 }

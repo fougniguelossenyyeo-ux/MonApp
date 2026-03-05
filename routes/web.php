@@ -7,7 +7,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\EntiteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\PaiementController;
-
+use App\Http\Controllers\PermissionController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -123,6 +123,8 @@ Route::middleware('auth')->group(function () {
 
     // Route dynamique toujours EN DERNIER
     Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
+    Route::post('/demandes/{demande}/annuler', [DemandeController::class, 'annuler'])
+         ->name('demandes.annuler');
 
 
     /*
@@ -149,5 +151,25 @@ Route::middleware('auth')->group(function () {
 
     // Route dynamique toujours en dernier
     Route::get('/paiements/{paiement}', [PaiementController::class, 'shown'])->name('paiements.shown');
+
+});
+// Routes de gestion des permissions (protégées par auth et vérification de permission dans le controller)
+Route::middleware(['auth'])->group(function () {
+
+    // Liste des rôles + leurs permissions (page principale)
+    Route::get('/permissions', [PermissionController::class, 'index'])
+         ->name('permissions.index');
+
+    // Mise à jour des permissions d’un rôle (le rôle vient du champ role_id)
+    Route::put('/permissions', [PermissionController::class, 'update'])
+         ->name('permissions.update');
+      
+    // Route pour afficher le formulaire d'attribution des permissions à un rôle
+   Route::get('/permissions/role/{role}/data', [PermissionController::class, 'getRolePermissions'])
+    ->name('permissions.role.data');
+
+    // Route pour enregistrer les permissions attribuées à un rôle
+    Route::put('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
+        ->name('permissions.save');
 
 });

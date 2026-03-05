@@ -68,4 +68,7 @@ class Kernel extends HttpKernel
         'permission' => \App\Http\Middleware\PermissionMiddleware::class,
 
     ];
+    protected $commands = [
+    \App\Console\Commands\InitPermissionsKama::class,
+];
 }

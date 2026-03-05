@@ -85,7 +85,7 @@
                     </span>
                 </div>
                 <a href="{{ route('users.edit', Auth::user()->id) }}" id="userText" class="ml-3">
-                    <p class="text-sm font-medium text-gray-900">{{ Auth::user()->prenom }} {{ Auth::user()->nom }}</p>
+                    <p class="text-sm font-medium text-gray-900">{{ Auth::user()->nom }} {{ Auth::user()->prenom }}</p>
                     <p class="text-xs text-gray-500">{{ Auth::user()->role?->libelle ?? 'Non défini' }}</p>
                 </a>
             </div>

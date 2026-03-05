@@ -35,6 +35,14 @@ class User extends Authenticatable
                 $user->id = Str::uuid()->toString();
             }
         });
+         static::deleting(function ($user) {
+        // Bloque la suppression si c'est le super admin
+        if ($user->role && $user->role->super_admin) {
+            throw new \Illuminate\Auth\Access\AuthorizationException(
+                "Le super administrateur système ne peut pas être supprimé pour des raisons de sécurité."
+            );
+        }
+    });
     }
     
 
@@ -57,15 +65,18 @@ class User extends Authenticatable
     }
 
     // Vérifier si l'utilisateur a une permission via son rôle
-    public function hasPermission($permissionName)
+public function hasPermission($permissionName): bool
 {
     if ($this->role && $this->role->super_admin) {
         return true;
     }
 
-    return $this->role
-        ->permissions
-        ->contains('nom', $permissionName);
+    return $this->role()
+        ->whereHas('permissions', function ($query) use ($permissionName) {
+            $query->where('nom', $permissionName);
+        })
+        ->exists();
 }
+
     
 }

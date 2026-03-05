@@ -24,26 +24,32 @@ class EntiteController extends Controller
         return view('entites.create');
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'libelle_entite' => 'required|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
+  public function store(Request $request)
+{
+    $request->validate([
+        'libelle_entite' => 'required|string|max:255',
+        'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    ]);
 
-        $logoPath = null;
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('logos', 'public');
-        }
+    $logoPath = null;
 
-        Entite::create([
-            'libelle_entite' => $request->libelle_entite,
-            'logo' => $logoPath,
-        ]);
-
-        return redirect()->route('entites.index')
-                         ->with('success', 'Entité créée avec succès.');
+    if ($request->hasFile('logo')) {
+        $file = $request->file('logo');
+        // Crée un nom unique basé sur le libelle de l'entité + timestamp
+        $fileName = \Str::slug($request->libelle_entite) . '_' . time() . '.' . $file->getClientOriginalExtension();
+        // Stocke le fichier dans le dossier 'logos' du disque public
+        $logoPath = $file->storeAs('logos', $fileName, 'public');
     }
+
+    // Création de l'entité
+    Entite::create([
+        'libelle_entite' => $request->libelle_entite,
+        'logo' => $logoPath,
+    ]);
+
+    return redirect()->route('entites.index')
+                     ->with('success', 'Entité créée avec succès.');
+}
 
     public function edit(Entite $entite)
     {

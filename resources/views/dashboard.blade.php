@@ -10,10 +10,10 @@
             <form method="GET" action="{{ route('dashboard') }}" class="flex items-center space-x-2">
                 <i class="fas fa-building text-gray-500"></i>
                 <select name="entite" class="border border-gray-300 rounded px-3 py-2 text-sm">
-                    <option value="" {{ empty($selectedEntite) ? 'selected' : '' }}>Toutes les entités</option>
+                    <option value=""  empty($selectedEntite ? 'selected' : '' }}>Toutes les entités</option>
                     @foreach($entites as $entite)
-                        <option value="{{ $entite->libelle_entite }}" {{ ($selectedEntite == $entite->libelle_entite) ? 'selected' : '' }}>
-                            {{ $entite->libelle_entite }}
+                        <option value=" $entite->libelle_entite "  ($selectedEntite == $entite->libelle_entite) ? 'selected' : '' >
+                          $entite->libelle_entite 
                         </option>
                     @endforeach
                 </select>

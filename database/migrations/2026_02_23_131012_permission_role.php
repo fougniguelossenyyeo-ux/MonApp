@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permission_role', function (Blueprint $table) {
-            $table->uuid('id')->primary();             // UUID unique pour la table pivot
             $table->uuid('role_id');                   // Clé étrangère vers roles
             $table->uuid('permission_id');             // Clé étrangère vers permissions
             $table->timestamps();

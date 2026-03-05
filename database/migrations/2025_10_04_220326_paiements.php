@@ -60,8 +60,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
 
             $table->timestamps();
-            $table->softDeletes();
-
+           
             // Index
             $table->index('demande_id');
             $table->index('statut');

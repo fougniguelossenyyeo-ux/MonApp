@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();             // UUID pour chaque permission
+            $table->foreignUuid('entite_id')           // ← AJOUT UNIQUEMENT CE CHAMP
+                  ->constrained('entites')
+                  ->onDelete('cascade')
+                  ->comment('Entité à laquelle cette permission appartient');
             $table->string('nom')->unique();           // Nom de la permission (ex: creer_demande)
             $table->string('description')->nullable(); // Description détaillée
             $table->timestamps();

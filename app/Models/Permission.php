@@ -20,6 +20,7 @@ class Permission extends Model
     protected $fillable = [
         'nom',
         'description',
+        'entite_id',
     ];
 
     protected static function booted()
@@ -32,19 +33,27 @@ class Permission extends Model
     }
 
     // ────────────────────────────────────────────────
-    // Relations (très léger pour le moment)
+    // Relations uniquement
     // ────────────────────────────────────────────────
+
+    /**
+     * L'entité à laquelle cette permission appartient
+     */
+    public function entite()
+    {
+        return $this->belongsTo(Entite::class, 'entite_id');
+    }
 
     /**
      * Les rôles qui possèdent cette permission
      */
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'permission_role', 'permission_id', 'role_id');
+        return $this->belongsToMany(
+            Role::class,
+            'permission_role',
+            'permission_id',
+            'role_id'
+        );
     }
-
-    // ────────────────────────────────────────────────
-    // Pas d'autres méthodes pour l'instant
-    // Toute logique métier (assignation, vérification, etc.) reste dans les controllers
-    // ────────────────────────────────────────────────
 }

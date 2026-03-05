@@ -9,15 +9,12 @@ use Illuminate\Support\Str;
 class Demande extends Model
 {
     use HasFactory;
-    use SoftDeletes;
-    
 
     protected $table = 'demandes';
 
+    protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
-
-    protected $primaryKey = 'id'; // explicite, bonne pratique
 
     protected $fillable = [
         'denomination',
@@ -38,16 +35,17 @@ class Demande extends Model
         'code_analytique',
         'centre_analytique',
         'code_projet',
-        'pieces_jointes',           // reste présent (JSON array de noms de fichiers)
+        'pieces_jointes',
         'status',
         'date_validation_controleur',
         'date_validation_daf',
         'date_validation_dg',
         'description',
+        'motif_refus',
     ];
 
     protected $casts = [
-        'pieces_jointes'             => 'array',     // JSON → tableau PHP automatiquement
+        'pieces_jointes'             => 'array',
         'date_validation_controleur' => 'datetime',
         'date_validation_daf'        => 'datetime',
         'date_validation_dg'         => 'datetime',
@@ -60,41 +58,22 @@ class Demande extends Model
                 $demande->id = (string) Str::orderedUuid();
             }
         });
+
+        // Protection ultime : bloquer toute tentative de suppression
+        static::deleting(function ($demande) {
+            throw new \Illuminate\Auth\Access\AuthorizationException(
+                "Une demande ne peut jamais être supprimée dans Kama. Utilisez l’annulation via le statut."
+            );
+        });
     }
 
-    // ────────────────────────────────────────────────
-    // Relations uniquement (pas de logique métier ici)
-    // ────────────────────────────────────────────────
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+    public function user()     { return $this->belongsTo(User::class); }
+    public function entite()   { return $this->belongsTo(Entite::class); }
+    public function paiement() { return $this->hasOne(Paiement::class); }
+    public function versements() {
+        return $this->hasManyThrough(PaiementVersement::class, Paiement::class, 'demande_id', 'paiement_id');
     }
-
-    public function entite()
-    {
-        return $this->belongsTo(Entite::class, 'entite_id', 'id');
-    }
-
-    public function paiement()
-    {
-        return $this->hasOne(Paiement::class, 'demande_id', 'id');
-    }
-
-    public function versements()
-    {
-        return $this->hasManyThrough(
-            PaiementVersement::class,
-            Paiement::class,
-            'demande_id',
-            'paiement_id',
-            'id',
-            'id'
-        );
-    }
-
-    public function historiqueActions()
-    {
+    public function historiqueActions() {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
 }

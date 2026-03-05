@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('users', function (Blueprint $table) {
+   Schema::create('users', function (Blueprint $table) {
     $table->uuid('id')->primary();
     $table->string('nom');
     $table->string('prenom');
@@ -20,13 +20,20 @@ return new class extends Migration
     $table->string('poste')->nullable();
     $table->string('password');
     $table->string('signature', 255)->nullable();
-    $table->uuid('entite_id')->nullable(); // relation entité
-   $table->foreignUuid('role_id')->nullable()->constrained('roles')->nullOnDelete();
+
+    // Entité principale
+    $table->uuid('entite_id')->nullable();
+    $table->foreign('entite_id')->references('id')->on('entites')->onDelete('set null');
+
+    // Rôle unique
+    $table->foreignUuid('role_id')->nullable()->constrained('roles')->nullOnDelete();
+
     $table->rememberToken();
     $table->timestamps();
 
-  
-    $table->foreign('entite_id')->references('id')->on('entites')->onDelete('set null');
+    // Index pour optimisation
+    $table->index('role_id');
+    $table->index('entite_id');
 });
     }
 

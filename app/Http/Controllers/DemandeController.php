@@ -523,6 +523,44 @@ public function RefuserDirecteur($id)
     return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de refuser cette demande.');
 }
 
+/**
+ * Annule une demande (changement de statut au lieu de suppression)
+ * Accessible par l'initiateur, le contrôleur, le DAF ou le DG selon ton workflow
+ */
+public function annuler(Request $request, Demande $demande)
+{
+    // Sécurité : on ne peut annuler que certaines demandes (ex : pas déjà payée)
+    $statutsAutorisés = [0, 1, 2, 3]; // brouillon, attente N1, N2, N3
+    if (!in_array($demande->status, $statutsAutorisés)) {
+        return back()->with('error', 'Cette demande ne peut plus être annulée (déjà validée ou payée).');
+    }
+
+    // Validation du motif (obligatoire)
+    $request->validate([
+        'motif_annulation' => 'required|string|max:500',
+    ]);
+
+    // Mise à jour du statut + sauvegarde du motif (ajoute ce champ si besoin)
+    $demande->update([
+        'status' => 99, // ou -99 selon ta convention
+         'motif_annulation' => $request->motif_annulation, // si tu ajoutes le champ
+    ]);
+
+    // Log automatique via observer (action = 'annule_demande')
+    // Pas besoin de log manuel ici, l'observer s'en charge
+
+    // Notification à l'initiateur + aux validateurs précédents (optionnel)
+    // Exemple : notifier l'initiateur
+    if ($demande->user && $demande->user->email) {
+        Mail::to($demande->user->email)
+            ->send(new \App\Mail\DemandeAnnulee($demande, $request->motif_annulation));
+    }
+
+    // Option : notifier les DAF/DG qui étaient en attente
+    // (tu peux récupérer les rôles via entité comme dans les autres méthodes)
+
+    return back()->with('success', 'Demande annulée avec succès. Motif : ' . $request->motif_annulation);
+}
 
 // Afficher les demandes validées par le DG
 public function valider()

@@ -27,7 +27,7 @@ return new class extends Migration
             // Informations fournisseur
             $table->string('contact_fournisseur', 30);
             $table->string('adresse_fournisseur');
-          $table->string('email_fournisseur', 191);
+            $table->string('email_fournisseur', 191);
             $table->string('reference_facture')->nullable();
             $table->string('reference_bon_commande')->nullable();
             $table->string('reference_contrat')->nullable();
@@ -38,6 +38,7 @@ return new class extends Migration
             $table->string('code_analytique')->nullable();
             $table->string('centre_analytique')->nullable();
             $table->string('code_projet')->nullable();
+             $table->text('description')->nullable(); 
 
             // Pièces jointes
             $table->text('pieces_jointes')->nullable();
@@ -50,7 +51,9 @@ return new class extends Migration
             $table->timestamp('date_validation_daf')->nullable();
             $table->timestamp('date_validation_dg')->nullable();
 
-            $table->text('description')->nullable(); // Optionnel, notes ou détails supplémentaires
+            // Description et motif de refus
+           
+            $table->text('motif_refus')->nullable(); // Nouveau champ pour refus
 
             $table->timestamps();
         });
