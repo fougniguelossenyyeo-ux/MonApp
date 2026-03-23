@@ -91,7 +91,8 @@
             <!-- Closing -->
              <div class="mb-6 text-center">
                 <!-- Nouveau lien -->
-                 <a href="{{ route('demandes.showEnAttenteDaf', $demande->id) }}" class="btn">
+                 <a href="{{ route('demandes.showEnAttenteDaf', $demande->id) }}" class="btn"
+                  style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
                    Valider ou Refuser la demande
                      </a>
             </div>

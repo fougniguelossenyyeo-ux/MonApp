@@ -19,17 +19,16 @@ class PaiementVersement extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'paiement_id',
-        'montant_verse',
-        'date_versement',
-        'mode_paiement',
-        'reference_paiement',
-        'commentaire',
-        'statut',
-    ];
+    'paiement_id',
+    'montant',
+    'mode_paiement',              
+    'date_versement',
+    'commentaire',
+    'statut_versement',     
+];
 
     protected $casts = [
-        'montant_verse'     => 'decimal:2',
+        'montant'     => 'decimal:2',
         'date_versement'    => 'date',
         'created_at'        => 'datetime',
         'updated_at'        => 'datetime',

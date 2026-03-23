@@ -53,7 +53,7 @@ class Paiement extends Model
 
     public function demande()
     {
-        return $this->belongsTo(Demande::class, 'demande_id');
+        return $this->belongsTo(Demande::class, 'demande_id','id');
     }
 
     public function user()
@@ -61,13 +61,32 @@ class Paiement extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function versements()
+    public function paiementVersements()
     {
-        return $this->hasMany(PaiementVersement::class, 'paiement_id');
+        return $this->hasMany(PaiementVersement::class, 'paiement_id', 'id');
     }
 
     public function historiqueActions()
     {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
+
+
+/**
+ * Montant déjà payé = somme des versements validés
+ */
+public function montantDejaPaye()
+{
+    return $this->paiementVersements
+        ->where('statut_versement', 'valide')
+        ->sum('montant');
+}
+
+/**
+ * Montant restant à payer
+ */
+public function montantRestant()
+{
+    return $this->montant_prevu - $this->montantDejaPaye();
+}
 }

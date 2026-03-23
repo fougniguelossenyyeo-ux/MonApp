@@ -152,7 +152,7 @@
                 <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
                     <span class="text-xs text-gray-500">Date de création : {{ $a->created_at?->format('d/m/Y H:i') }}</span>
                     <div class="flex space-x-2">
-                        <a href="{{ route('demandes.show_enattente', $a->id) }}" class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                        <a href="{{ route('demandes.showEnAttenteControl', $a->id) }}" class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
                             Voir détails
                         </a>
                     </div>

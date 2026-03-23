@@ -18,31 +18,79 @@ use App\Mail\DemandeRefusee;
 use App\Mail\DemandeRefuseeDaf;
 use App\Mail\DemandeRefuseeDG;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 class DemandeController extends Controller
 {
+
+private function verifierPermission($user, $demande, $niveau)
+{
+    // Transformer le nom de l'entité en slug
+    $slugEntite = Str::slug($demande->entite->libelle_entite, '_');
+
+    // Construire le nom de permission
+    $permissionName = "valider_demande_niveau{$niveau}_{$slugEntite}";
+   
+
+    // Vérifier si l'utilisateur possède cette permission
+    return $user->role
+        ->permissions
+        ->where('nom', $permissionName)
+        ->isNotEmpty();
+}
+// envoie de mail vers les utilisateurs du niveau de validation suivant
+private function envoyerNotificationNiveau($demande, $niveau, $cc = [])
+{
+    $slugEntite = Str::slug($demande->entite->libelle_entite, '_');
+
+    $permission = "valider_demande_niveau{$niveau}_{$slugEntite}";
+
+    $utilisateurs = User::whereHas('role.permissions', function ($q) use ($permission) {
+        $q->where('nom', $permission);
+    })->get();
+
+    // Ajouter l'initiateur dans les CC
+    if ($demande->user) {
+        $cc[] = $demande->user->email;
+    }
+
+    foreach ($utilisateurs as $utilisateur) {
+
+        if ($niveau == 2) {
+            Mail::to($utilisateur->email)
+                ->cc($cc)
+                ->send(new NotificationDAF($demande));
+        }
+
+        if ($niveau == 3) {
+            Mail::to($utilisateur->email)
+                ->cc($cc)
+                ->send(new NotificationDG($demande));
+        }
+    }
+}
+
     /**
      * Liste toutes les demandes
      */
- public function index()
+public function index()
 {
-    // 1️ Récupération des demandes avec relations
+    // Récupérer toutes les demandes, peu importe le statut
     $demandes = Demande::with(['entite', 'user'])
-        ->orderByDesc('created_at')
-        ->paginate(12); // Pagination 12 par page
+        ->orderBy('created_at', 'desc')
+        ->paginate(12); // Pagination
 
-    // 2️ Calcul des totaux par statut (hors refusés)
+    // Calcul des totaux pour le dashboard (somme des montants)
     $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
     $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
     $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
     $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
     $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
 
-    // 3️ Calcul du taux de traitement
-    $tauxTraitement = $totalDemandes > 0
-        ? round(($totalValide / $totalDemandes) * 100, 2)
+    // Taux de traitement
+    $tauxTraitement = $totalDemandes > 0 
+        ? round(($totalValide / $totalDemandes) * 100, 2) 
         : 0;
 
-    // 4️ Retour de la vue avec toutes les variables pour le dashboard
     return view('demandes.index', compact(
         'demandes',
         'totalDemandes',
@@ -55,21 +103,33 @@ class DemandeController extends Controller
 }
 
 
-
-
     /**
      * Formulaire de création
      */
-    public function create()
-    {
-        $entites = Entite::all();
-        $users = User::all();
-        return view('demandes.create', compact('entites', 'users'));
-    }
+public function create()
+{
+    $user = Auth::user();
 
+    $permissions = $user->role->permissions;
+
+    $permissionsCreate = $permissions->filter(function ($permission) {
+        return str_starts_with($permission->nom, 'cree_demande_');
+    });
+
+    $entiteSlugs = $permissionsCreate->map(function ($permission) {
+        return str_replace('cree_demande_', '', $permission->nom);
+    });
+
+    $entites = Entite::all()->filter(function ($entite) use ($entiteSlugs) {
+        return $entiteSlugs->contains(Str::slug($entite->libelle_entite, '_'));
+    })->values();
+
+    return view('demandes.create', compact('entites'));
+}
     /**
      * Enregistrer une demande
      */
+
 public function store(Request $request)
 {
     try {
@@ -79,6 +139,7 @@ public function store(Request $request)
             'TVA sur hydrocarbure 9%' => 9,
         ];
 
+        //  Validation des champs
         $validated = $request->validate([
             'denomination' => 'required|string|max:255',
             'entite_id' => 'required|uuid|exists:entites,id',
@@ -99,12 +160,15 @@ public function store(Request $request)
             'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:102400',
         ]);
 
-        $entite = \App\Models\Entite::findOrFail($validated['entite_id']);
-        $permissionName = 'valider_demande_niveau1_' . Str::slug($entite->libelle_entite, '_');
+        $entite = Entite::findOrFail($validated['entite_id']);
+        $slugEntite = Str::slug($entite->libelle_entite, '_');
+        $permissionName = 'valider_demande_niveau1_' . $slugEntite;
 
-        // Récupération des utilisateurs ayant la permission en une seule requête
-        $validateurs = \App\Models\User::with(['role.permissions'])
-            ->where('entite_id', $entite->id)
+        //  Récupération des validateurs
+        $validateurs = User::with(['role.permissions'])
+            ->whereHas('role', function ($query) use ($entite) {
+                $query->where('entite_id', $entite->id);
+            })
             ->whereHas('role.permissions', function($query) use ($permissionName) {
                 $query->where('nom', $permissionName);
             })
@@ -113,7 +177,7 @@ public function store(Request $request)
         if ($validateurs->isEmpty()) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Impossible de créer la demande : aucun utilisateur ne peut la valider pour cette entité.');
+                ->with('error', "Impossible de créer la demande : aucun utilisateur n'a la permission '$permissionName' pour l'entité '{$entite->libelle_entite}'.");
         }
 
         // Calcul du montant TTC
@@ -121,63 +185,44 @@ public function store(Request $request)
         $tvaRate = $tvaOptions[$validated['tva']];
         $validated['montant_paiement_fournisseur'] = $montantHT + ($montantHT * $tvaRate / 100);
 
-        // Génération de la référence DP
+        //  Génération de la référence DP
         $validated['reference_dp'] = 'DP-CI' . date('dmY') . '-' . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $validated['user_id'] = auth()->id();
         $validated['status'] = 0;
 
-        // Fusion des fichiers joints avec FPDI
+        //  Gestion des fichiers joints par dossier spécifique
         if ($request->hasFile('pieces_jointes')) {
-            $denomination = preg_replace('/[^A-Za-z0-9\-]/', '_', $request->denomination);
-            $date = date('d-m-Y');
-            $mergedFileName = 'pieces_jointes/' . $denomination . '_' . $date . '.pdf';
-            $mergedFilePath = storage_path('app/public/' . $mergedFileName);
-
-            if (!file_exists(dirname($mergedFilePath))) {
-                mkdir(dirname($mergedFilePath), 0755, true);
-            }
-
-            $pdf = new \setasign\Fpdi\Fpdi();
+            $folder = 'pieces_jointes/' . $validated['reference_dp'];
+            $storedFiles = [];
 
             foreach ($request->file('pieces_jointes') as $file) {
-                $pageCount = $pdf->setSourceFile($file->getRealPath());
-                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-                    $tpl = $pdf->importPage($pageNo);
-                    $size = $pdf->getTemplateSize($tpl);
-                    $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                    $pdf->useTemplate($tpl);
-                }
+                $filename = $file->getClientOriginalName();
+                $path = $file->storeAs($folder, $filename, 'public'); // stockage public
+                $storedFiles[] = $path;
             }
 
-            $pdf->Output($mergedFilePath, 'F');
-            $validated['pieces_jointes'] = $mergedFileName;
-
-            $pdf->close();
-            unset($pdf);
-            gc_collect_cycles();
+            $validated['pieces_jointes'] = json_encode($storedFiles); // on stocke un JSON des chemins
         }
 
-        // Création de la demande
+        //  Création de la demande
         $demande = \App\Models\Demande::create($validated);
 
-        // Notification aux validateurs
+        //  Envoi du mail aux validateurs
         foreach ($validateurs as $user) {
-            Mail::to($user->email)
-                ->send(new \App\Mail\NouvelleDemandeDp($demande));
+            Mail::to($user->email)->send(
+                new \App\Mail\NouvelleDemandeDP($demande, $user)
+            );
         }
 
         return redirect()->route('demandes.create')
-            ->with('success', "Demande {$demande->reference_dp} - {$demande->denomination} créée avec succès !");
+            ->with('success', "Demande {$demande->reference_dp} - {$demande->denomination} créée avec succès et notifiée aux validateurs !");
 
     } catch (\Exception $e) {
         \Log::error('Erreur lors de la création de la demande DP : ' . $e->getMessage());
-
         return redirect()->route('demandes.create')
             ->with('error', 'Une erreur est survenue lors de la création de la demande. Veuillez réessayer.');
     }
 }
-
-
   
     /**
 
@@ -185,13 +230,15 @@ public function store(Request $request)
  */
 public function show(Demande $demande)
 {
-    // Charger les relations
-    $demande->load(['entite', 'user']);
+    $demande->load(['entite','user']);
 
-    // Comme on enregistre un seul PDF fusionné, inutile de décoder en JSON
-    $piece = $demande->pieces_jointes ? asset('storage/' . $demande->pieces_jointes) : null;
+    $pieces = [];
 
-    return view('demandes.show', compact('demande', 'piece'));
+    if ($demande->pieces_jointes) {
+        $pieces = json_decode($demande->pieces_jointes, true);
+    }
+
+    return view('demandes.show', compact('demande','pieces'));
 }
     /**
      * en attente controlleur
@@ -228,62 +275,81 @@ public function enattenteControl()
 
 public function showEnAttenteControl($id)
 {
-    // On récupère uniquement une demande avec statut = 0
-    $demande = Demande::where('status', 0)->findOrFail($id);
+    $demande = Demande::with(['entite','user'])
+        ->where('id', $id)
+        ->where('status', 0)
+        ->firstOrFail();
 
-    return view('demandes.show_enattente', compact('demande'));
+    $user = Auth::user();
+
+    // Construire le nom de permission selon l'entité
+
+    // Vérifier permission niveau 1
+    if (!$this->verifierPermission($user, $demande, 1)) {
+        abort(403, "Vous n'avez pas l'autorisation de voir cette demande.");
+    }
+
+    // Décoder les pièces jointes
+    $pieces = $demande->pieces_jointes 
+        ? json_decode($demande->pieces_jointes, true) 
+        : [];
+
+    return view('demandes.show_enattente', compact('demande','pieces'));
 }
 
 public function validerControleur($id)
 {
-    $demande = Demande::with('entite', 'user')->find($id); // Charger l'entité et l'utilisateur qui a initié
+    $demande = Demande::with('entite', 'user')->findOrFail($id);
 
-    if ($demande && $demande->status == 0) {
-        $demande->status = 1; // Passe en attente DAF
-        $demande->date_validation_controleur = now();
-        $demande->save();
+    $user = Auth::user();
 
-        // Récupérer les DAF de l'entité
-        $dafs = User::whereHas('role', function ($q) use ($demande) {
-                $q->whereRaw('LOWER(libelle) = ?', ['daf'])
-                  ->where('entite_id', $demande->entite_id); // L'entité est dans le role
-            })
-            ->get();
-
-        // Envoi d'un email à chaque DAF de l'entité, en mettant l'initiateur en copie
-        foreach ($dafs as $daf) {
-            Mail::to($daf->email)
-                ->cc($demande->user->email) // copie à l'initiateur
-                ->send(new NotificationDAF($demande));
-        }
-
-        return redirect()->route('demandes.enAttenteControl')
-                         ->with('success', "Demande validée et envoyée aux DAF de l’entité.");
+    if ($demande->status != 0) {
+        return redirect()->back()->with('error', 'Cette demande ne peut plus être validée.');
     }
 
+    if (!$this->verifierPermission($user, $demande, 1)) {
+        abort(403, "Vous n'avez pas la permission de valider cette demande.");
+    }
+
+    $demande->status = 1;
+    $demande->date_validation_controleur = now();
+    $demande->save();
+
+    // Envoyer notification niveau 2
+    $this->envoyerNotificationNiveau($demande, 2);
+
     return redirect()->route('demandes.enAttenteControl')
-                     ->with('error', 'Impossible de valider cette demande.');
+                     ->with('success', 'Demande envoyée au niveau suivant.');
 }
 
 
 
 public function refuserControleur($id)
 {
-    // Récupérer la demande avec l'utilisateur qui l'a initiée
-    $demande = Demande::with('user')->findOrFail($id);
+    $demande = Demande::with('user', 'entite')->findOrFail($id);
+    $user = Auth::user();
 
-    // Mettre le statut à -1 (refusé par le contrôleur)
-    $demande->status = -1;
-    $demande->date_validation_controleur = now(); 
+    // Vérifier si le statut est valide pour refus
+    if ($demande->status != 0) {
+        return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
+    }
+
+    // Vérifier si l'utilisateur a la permission de refuser (niveau 1)
+    if (!$this->verifierPermission($user, $demande, 1)) {
+        abort(403, "Vous n'avez pas la permission de refuser cette demande.");
+    }
+
+    // Mettre à jour le statut pour refus
+    $demande->status = -1; // Refusé par le contrôleur
+    $demande->date_validation_controleur = now();
     $demande->save();
 
-    // Envoyer un email à l'initiateur
+    // Envoyer un mail à l'initiateur
     if ($demande->user && $demande->user->email) {
         Mail::to($demande->user->email)
             ->send(new DemandeRefusee($demande));
     }
 
-    // Rediriger avec message d'erreur
     return redirect()->route('demandes.enAttenteControl')
                      ->with('error', 'La demande a été refusée et l’initiateur a été notifié.');
 }
@@ -324,84 +390,113 @@ public function enAttenteDaf()
 
 public function showEnAttenteDaf($id)
 {
-    // Une seule demande, détail
+    // Récupérer la demande en attente du DAF
     $demande = Demande::with(['entite', 'user'])
                       ->where('id', $id)
                       ->where('status', 1)
                       ->firstOrFail();
+  $user = Auth::user();
 
-    // Vue DÉTAIL
-    return view('demandes.show_enattenteDaf', compact('demande'));
+    
+ // Vérifier permission niveau 1
+    if (!$this->verifierPermission($user, $demande, 2)) {
+        abort(403, "Vous n'avez pas l'autorisation de voir cette demande.");
+    }
+
+    // Décoder les pièces jointes
+    $pieces = $demande->pieces_jointes 
+        ? json_decode($demande->pieces_jointes, true) 
+        : [];
+
+    return view('demandes.show_enAttenteDaf', compact('demande','pieces'));
 }
 
 //validation du DAF
-public function validerDAF($id)
-{
-    $demande = Demande::with('entite', 'user')->find($id); // Charger entité et utilisateur
+public function validerDaf($id)
+{ 
+   
+    $demande = Demande::with('entite', 'user')->findOrFail($id);
+    $user = Auth::user();
 
-    if ($demande && $demande->status == 1) {
-        $demande->status = 2; // En attente DG
-        $demande->date_validation_daf = now();
-        $demande->save();
-
-        // Récupérer les DG de l'entité
-        $dgs = User::whereHas('role', function ($q) use ($demande) {
-                $q->whereRaw('LOWER(libelle) = ?', ['dg'])
-                  ->where('entite_id', $demande->entite_id);
-            })
-            ->get();
-
-        // Récupérer le contrôleur de la même entité
-        $controleur = User::whereHas('role', function($q) use ($demande) {
-            $q->whereRaw('LOWER(libelle) = ?', ['controleur'])
-              ->where('entite_id', $demande->entite_id);
-        })->first();
-
-        // Préparer la liste des CC
-        $cc = [];
-        if ($demande->user) $cc[] = $demande->user->email;       // Initiateur
-        if ($controleur) $cc[] = $controleur->email;            // Contrôleur
-
-        // Envoyer le mail à tous les DG de l’entité
-        if ($dgs->isNotEmpty()) {
-            Mail::to($dgs->pluck('email'))
-                ->cc($cc)
-                ->send(new NotificationDG($demande));
-        }
-
+    // Vérifier statut
+    if ($demande->status != 1) {
         return redirect()->route('demandes.enAttenteDaf')
-                         ->with('success', 'Demande validée et envoyée aux DG de l’entité ');
+                         ->with('error', 'Impossible de valider cette demande.');
     }
 
+    //  Vérifier permission (IMPORTANT)
+    if (!$this->verifierPermission($user, $demande, 2)) {
+        abort(403, "Vous n'avez pas la permission.");
+    }
+
+    // Mise à jour
+    $demande->status = 2;
+    $demande->date_validation_daf = now();
+    $demande->save();
+
+    // CC
+    $cc = [];
+
+    if ($demande->user && $demande->user->email) {
+        $cc[] = $demande->user->email;
+    }
+
+    $slug = Str::slug($demande->entite->libelle_entite, '_');
+
+    $controleur = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau1_{$slug}");
+    })->first();
+
+    if ($controleur && $controleur->email) {
+        $cc[] = $controleur->email;
+    }
+// Envoyer notification niveau 3 (DG) avec CC
+    $this->envoyerNotificationNiveau($demande, 3, $cc);
+
     return redirect()->route('demandes.enAttenteDaf')
-                     ->with('error', 'Impossible de valider cette demande.');
+                     ->with('success', 'Demande validée et envoyée au niveau suivant.');
 }
 
 public function refuserDaf($id)
 {
-    $demande = Demande::with('entite', 'user')->findOrFail($id); // Charger l'entité et l'utilisateur
-    if($demande && $demande->status == 1){
-        $demande->status = -2; // Refusée par DAF
-         $demande->date_validation_daf = now();
-        $demande->save();
+    $demande = Demande::with('user', 'entite')->findOrFail($id);
+    $user = Auth::user();
 
-        // Récupérer le contrôleur de l'entité
-        $controleur = User::whereHas('role', function($q) use ($demande) {
-            $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['controleur']);
-        })->first();
-
-        // Envoi du mail à l'initiateur avec le contrôleur en copie
-        if($demande->user && $controleur) {
-            Mail::to($demande->user->email)
-                ->cc($controleur->email?? null)
-                ->send(new DemandeRefuseeDaf($demande));
-        }
-
-        return redirect()->route('demandes.enAttenteDaf')->with('error', 'Demande refusée par le DAF.');
+    // Vérifier si le statut est valide pour refus (niveau DAF)
+    if ($demande->status != 1) {
+        return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
     }
 
-    return redirect()->route('demandes.enAttenteDaf')->with('error', 'Impossible de refuser cette demande.');
+    // Vérifier permission niveau 2
+    if (!$this->verifierPermission($user, $demande, 2)) {
+        abort(403, "Vous n'avez pas la permission de refuser cette demande.");
+    }
+
+    // Mettre à jour le statut
+    $demande->status = -2;
+    $demande->date_validation_daf = now();
+    $demande->save();
+
+    //  Construire le slug de l'entité
+    $slug = Str::slug($demande->entite->libelle_entite, '_');
+
+    //  Récupérer utilisateurs niveau 1 (contrôleurs)
+    $niveau1 = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau1_{$slug}");
+    })->pluck('email')->toArray();
+
+    //  Nettoyer les emails (pas de doublons / null)
+    $cc = array_filter(array_unique($niveau1));
+
+    //  Envoyer mail à l'initiateur avec CC
+    if ($demande->user && $demande->user->email) {
+        Mail::to($demande->user->email)
+            ->cc($cc)
+            ->send(new DemandeRefuseeDaf($demande));
+    }
+
+    return redirect()->route('demandes.enAttenteDaf')
+                     ->with('error', 'La demande a été refusée et les acteurs ont été notifiés.');
 }
 // Liste des demandes en attente Directeur
 public function enAttenteDirecteur()
@@ -444,128 +539,117 @@ public function showEnAttenteDirecteur($id)
         ->where('id', $id)
         ->where('status', 2)
         ->firstOrFail();
+  $user = Auth::user();
 
-    return view('demandes.show_enattente_directeur', compact('demande'));
-    
+  
 
+     // Vérifier permission niveau 1
+    if (!$this->verifierPermission($user, $demande, 3)) {
+        abort(403, "Vous n'avez pas l'autorisation de voir cette demande.");
+    }
+
+    // Décoder les pièces jointes
+    $pieces = $demande->pieces_jointes 
+        ? json_decode($demande->pieces_jointes, true) 
+        : [];
+
+    return view('demandes.show_enattente_directeur', compact('demande','pieces'));
 }
 // Valider la demande par le Directeur
 public function validerDirecteur($id)
 {
-    $demande = Demande::with('entite', 'user')->find($id); // Charger l'entité et l'initiateur
+    $demande = Demande::with('entite', 'user')->findOrFail($id);
 
-    if ($demande && $demande->status == 2) {
-        $demande->status = 3; // Statut validé par DG
-        $demande->date_validation_dg = now();
-        $demande->save();
-
-        // Récupérer la Trésorie de l'entité
-        $tresories = User::whereHas('role', function ($q) use ($demande) {
-            $q->whereRaw('LOWER(libelle) = ?', ['tresorie'])
-              ->where('entite_id', $demande->entite_id);
-        })->get();
-
-        // Récupérer le DAF qui a validé
-        $daf = User::whereHas('role', function($q) use ($demande) {
-            $q->whereRaw('LOWER(libelle) = ?', ['daf'])
-              ->where('entite_id', $demande->entite_id);
-        })->first();
-
-        // Récupérer le contrôleur de l'entité
-        $controleur = User::whereHas('role', function($q) use ($demande) {
-            $q->whereRaw('LOWER(libelle) = ?', ['controleur'])
-              ->where('entite_id', $demande->entite_id);
-        })->first();
-
-        // Envoi du mail à la Trésorie avec copies à l'initiateur, au DAF et au contrôleur
-        foreach ($tresories as $tresorie) {
-           Mail::to($tresorie->email)
-                ->cc(array_filter([
-                    $demande->user->email ?? null,
-                    $daf->email ?? null,
-                    $controleur->email ?? null,
-                ]))
-                ->send(new NotificationTresorie($demande));
-        }
-
+    if ($demande->status != 2) {
         return redirect()->route('demandes.enAttenteDirecteur')
-                         ->with('success', 'Demande validée et envoyée à la Trésorie.');
+                         ->with('error', 'Impossible de valider cette demande.');
     }
 
+    // Mise à jour du statut et date validation DG
+    $demande->status = 3; 
+    $demande->date_validation_dg = now();
+    $demande->save();
+
+    // Créer le paiement (une seule fois)
+    $demande->paiement()->create([
+        'user_id' => auth()->id(),
+        'montant_prevu' => $demande->montant_paiement_fournisseur,
+        'montant_paye' => 0,
+        'montant_restant' => $demande->montant_paiement_fournisseur,
+        'statut' => 'en_attente', // non payé
+    ]);
+
+    // Préparer les CC : initiateur + DAF + contrôleur
+    $cc = [$demande->user->email];
+
+    $slug = Str::slug($demande->entite->libelle_entite, '_');
+
+    $daf = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau2_{$slug}");
+    })->first();
+    if ($daf) $cc[] = $daf->email;
+
+    $controleur = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau1_{$slug}");
+    })->first();
+    if ($controleur) $cc[] = $controleur->email;
+
+    // Notification niveau 3
+    $this->envoyerNotificationNiveau($demande, 3, $cc);
+
     return redirect()->route('demandes.enAttenteDirecteur')
-                     ->with('error', 'Impossible de valider cette demande.');
+                     ->with('success', 'Demande validée, paiement créé et notifications envoyées.');
 }
-
-
 // Refuser la demande par le Directeur
 
 
 
-public function RefuserDirecteur($id)
+public function refuserDirecteur($id)
 {
-    $demande = Demande::with('entite', 'user')->findOrFail($id);
+    $demande = Demande::with('user', 'entite')->findOrFail($id);
+    $user = Auth::user();
 
-    if ($demande->status == 2) {
-        $demande->status = -3; // Refusée par le DG
-        $demande->date_validation_dg = now();
-        $demande->save();
-
-        // Envoi du mail à l'initiateur avec DAF et contrôleur en copie
-        $daf = User::whereHas('role', fn($q) => $q->where('entite_id', $demande->entite_id)
-                                                   ->whereRaw('LOWER(libelle) = ?', ['daf']))
-                                                   ->first();
-        $controleur = User::whereHas('role', fn($q) => $q->where('entite_id', $demande->entite_id)
-                                                          ->whereRaw('LOWER(libelle) = ?', ['controleur']))
-                                                           ->first();
-
-        Mail::to($demande->user->email)
-            ->cc(array_filter([$daf->email ?? null, $controleur->email ?? null]))
-            ->send(new DemandeRefuseeDG($demande));
-
-        return redirect()->route('demandes.enAttenteDirecteur')->with('success', 'Demande refusée avec succès.');
+    // Vérifier si le statut est valide pour refus (niveau DG)
+    if ($demande->status != 2) {
+        return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
     }
 
-    return redirect()->route('demandes.enAttenteDirecteur')->with('error', 'Impossible de refuser cette demande.');
-}
-
-/**
- * Annule une demande (changement de statut au lieu de suppression)
- * Accessible par l'initiateur, le contrôleur, le DAF ou le DG selon ton workflow
- */
-public function annuler(Request $request, Demande $demande)
-{
-    // Sécurité : on ne peut annuler que certaines demandes (ex : pas déjà payée)
-    $statutsAutorisés = [0, 1, 2, 3]; // brouillon, attente N1, N2, N3
-    if (!in_array($demande->status, $statutsAutorisés)) {
-        return back()->with('error', 'Cette demande ne peut plus être annulée (déjà validée ou payée).');
+    // Vérifier permission niveau 3
+    if (!$this->verifierPermission($user, $demande, 3)) {
+        abort(403, "Vous n'avez pas la permission de refuser cette demande.");
     }
 
-    // Validation du motif (obligatoire)
-    $request->validate([
-        'motif_annulation' => 'required|string|max:500',
-    ]);
+    // Mettre à jour le statut
+    $demande->status = -3;
+    $demande->date_validation_dg = now();
+    $demande->save();
 
-    // Mise à jour du statut + sauvegarde du motif (ajoute ce champ si besoin)
-    $demande->update([
-        'status' => 99, // ou -99 selon ta convention
-         'motif_annulation' => $request->motif_annulation, // si tu ajoutes le champ
-    ]);
+    //  Construire le slug de l'entité
+    $slug = Str::slug($demande->entite->libelle_entite, '_');
 
-    // Log automatique via observer (action = 'annule_demande')
-    // Pas besoin de log manuel ici, l'observer s'en charge
+    //  Récupérer utilisateurs niveau 1 et niveau 2
+    $niveau1 = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau1_{$slug}");
+    })->pluck('email')->toArray();
 
-    // Notification à l'initiateur + aux validateurs précédents (optionnel)
-    // Exemple : notifier l'initiateur
+    $niveau2 = User::whereHas('role.permissions', function ($q) use ($slug) {
+        $q->where('nom', "valider_demande_niveau2_{$slug}");
+    })->pluck('email')->toArray();
+
+    //  Fusionner les CC
+    $cc = array_filter(array_unique(array_merge($niveau1, $niveau2)));
+
+    //  Envoyer mail à l'initiateur avec CC
     if ($demande->user && $demande->user->email) {
         Mail::to($demande->user->email)
-            ->send(new \App\Mail\DemandeAnnulee($demande, $request->motif_annulation));
+            ->cc($cc)
+            ->send(new DemandeRefuseeDG($demande));
     }
 
-    // Option : notifier les DAF/DG qui étaient en attente
-    // (tu peux récupérer les rôles via entité comme dans les autres méthodes)
-
-    return back()->with('success', 'Demande annulée avec succès. Motif : ' . $request->motif_annulation);
+    return redirect()->route('demandes.enAttenteDirecteur')
+                     ->with('error', 'La demande a été refusée et les acteurs ont été notifiés.');
 }
+
 
 // Afficher les demandes validées par le DG
 public function valider()
@@ -601,10 +685,27 @@ public function valider()
 
 public function showValider($id)
 {
-    $demande = Demande::findOrFail($id);
-    return view('demandes.show_valider', compact('demande'));
-}
+    // 1️ Récupérer la demande avec relations
+    $demande = Demande::with(['entite', 'user'])
+        ->where('id', $id)
+        ->where('status', 3) //  uniquement les demandes validées
+        ->firstOrFail();
 
+    $user = Auth::user();
+
+    // 2️ Vérifier la permission (niveau 3 = DG)
+    if (!$this->verifierPermission($user, $demande, 3)) {
+        abort(403, "Vous n'avez pas l'autorisation de voir cette demande.");
+    }
+
+    // 3️ Décoder les pièces jointes
+    $pieces = $demande->pieces_jointes 
+        ? json_decode($demande->pieces_jointes, true) 
+        : [];
+
+    // 4️ Retourner la vue
+    return view('demandes.show_valider', compact('demande', 'pieces'));
+}
 //impression demandes de paiements
 public function imprimer($id)
 {

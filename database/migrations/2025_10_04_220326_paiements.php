@@ -40,7 +40,7 @@ return new class extends Migration
             // Statut global du paiement
             $table->enum('statut', [
                 'en_attente',       // paiement pas encore lancé
-                'initie',           // ordre de paiement créé
+                     // ordre de paiement créé
                 'partiel',          // au moins un versement effectué
                 'termine',          // totalement payé
                 'annule',           // annulé avant exécution

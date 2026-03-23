@@ -33,15 +33,15 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <!-- Introduction -->
             <div class="mb-8">
-    @php
-$controleur = $controleurs->first();
+   
+
+@php
+$controleur = $validateur;
 @endphp
 
 
-
-
                 <p class="text-gray-700 mb-4">
-                    Bonjour {{ $controleur->prenom ?? 'Contrôleur' }},
+                  Bonjour {{ $validateur->prenom }} {{ $validateur->nom }},
                 </p>
                 <p class="text-gray-700 mb-4">
                     Veuillez trouver ci-dessous les détails de la demande de paiement soumise pour validation.
@@ -100,12 +100,14 @@ $controleur = $controleurs->first();
            
 
             <!-- Closing -->
-           <div class="mb-6 text-center">
-                <!-- Nouveau lien -->
-                 <a href="{{ route(' demandes.show_enattente', $demande->id) }}" class="btn">
-                   Valider ou Refuser la demande
-                     </a>
-            </div>
+          <!-- Closing -->
+<div class="mb-6 text-center">
+    <!-- Lien vers la consultation de la demande entière -->
+<a href="{{ route('demandes.show_enattente', $demande->id, true) }}"  
+      style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
+       Consulter et valider/refuser la demande
+    </a>
+</div>
         </div>
 
         <!-- Email Footer -->

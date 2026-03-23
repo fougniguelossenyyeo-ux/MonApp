@@ -6,7 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema; 
 use App\Models\Entite;
 use App\Observers\EntiteObserver;
-
+use Illuminate\Support\Facades\URL;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
     {
          Schema::defaultStringLength(191);
          Entite::observe(EntiteObserver::class);
+           // URL::forceScheme('https');
     }
 }

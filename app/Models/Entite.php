@@ -40,6 +40,7 @@ class Entite extends Model
             // Supprimer toutes les permissions liées
             $entite->permissions()->delete();
         });
+        
     }
 
     // ───── Relations ─────

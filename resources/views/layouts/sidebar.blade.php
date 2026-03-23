@@ -1,9 +1,23 @@
-<div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-30 transform translate-x-0 md:translate-x-0 sidebar-transition">
+<body class="overflow-x-hidden">
+
+<!-- Overlay mobile -->
+<div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-20 md:hidden"></div>
+
+<!-- Bouton burger (menu mobile) -->
+<button id="sidebarToggle" class="md:hidden p-2 text-gray-700 z-40 fixed top-4 left-4 bg-white rounded shadow">
+    ☰
+</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 max-w-full bg-white shadow-lg z-30 transform -translate-x-full md:translate-x-0 sidebar-transition">
 
     <style>
         .sidebar-link.active {
-            background: linear-gradient(to right, #6366F1, #8B5CF6); /* dégradé comme le logo */
+            background: linear-gradient(to right, #6366F1, #8B5CF6);
             color: white;
+        }
+        .sidebar-transition {
+            transition: transform 0.3s ease;
         }
     </style>
 
@@ -21,7 +35,8 @@
                 </h1>
             </div>
         </div>
-        <button id="sidebarClose" class="md:hidden text-gray-500 hover:text-gray-700">
+        <!-- Bouton fermer mobile -->
+        <button id="sidebarClose" class="text-gray-500 hover:text-gray-700 md:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -33,45 +48,39 @@
         <div class="space-y-1">
 
             <!-- Tableau de bord -->
-            <a href="{{ route('dashboard') }}" 
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="fas fa-home mr-3"></i>
                 <span id="dashboardText">Tableau de bord</span>
             </a>
 
-    <!-- Enregistrer DP : affiché seulement si l'utilisateur a la permission 'cree_demande' -->
-@if(Auth::user()->canCreateDemande())
-    <a href="{{ route('demandes.create') }}" 
-       class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : '' }}">
-        <i class="fas fa-plus-circle mr-3"></i>
-        <span id="registerText">Enregistrer DP</span>
-    </a>
-@endif
+            <!-- Enregistrer DP -->
+            @if(Auth::user()->canCreateDemande())
+            <a href="{{ route('demandes.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : '' }}">
+                <i class="fas fa-plus-circle mr-3"></i>
+                <span id="registerText">Enregistrer DP</span>
+            </a>
+            @endif
 
             <!-- Faire un paiement -->
-            <a href="{{route('paiements.index')}}" 
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiement') ? 'active' : '' }}">
+            <a href="{{route('paiements.index')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiement') ? 'active' : '' }}">
                 <i class="fas fa-money-bill-wave mr-3"></i>
                 <span id="paymentText">Faire un paiement</span>
             </a>
 
             <!-- Demandes -->
-            <a href="{{ route('demandes.index') }}" 
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.index') ? 'active' : '' }}">
+            <a href="{{ route('demandes.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.index') ? 'active' : '' }}">
                 <i class="fas fa-chart-bar mr-3"></i>
                 <span id="requestsText">Demandes</span>
             </a>
 
-            <!-- Paiements-->
-            <a href="{{route('paiements.emis')}}"
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('archiveDP') ? 'active' : '' }}">
+            <!-- Paiements -->
+            <a href="{{route('paiements.emis')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('archiveDP') ? 'active' : '' }}">
                 <i class="fas fa-archive mr-3"></i>
                 <span id="archivesText">Paiements</span>
             </a>
 
             <!-- Administration -->
-            <a href="{{ route('users.list') }}" 
-               class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('users.list') ? 'active' : '' }}">
+            <a href="{{ route('users.list') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('users.list') ? 'active' : '' }}">
                 <i class="fas fa-cog mr-3"></i>
                 <span id="adminText">Administration</span>
             </a>
@@ -92,22 +101,46 @@
                 </a>
             </div>
 
-            <a href="{{ route('logout') }}" id="logoutBtn"
-               class="w-full flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+            <a href="{{ route('logout') }}" id="logoutBtn" class="w-full flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                 <i class="fas fa-sign-out-alt mr-2"></i>
                 <span id="logoutText">Déconnexion</span>
             </a>
         </div>
     </nav>
 
-    <!-- Script JS pour clic actif (optionnel) -->
+    <!-- Script JS -->
     <script>
+        // Clic actif sur les liens
         const links = document.querySelectorAll('.sidebar-link');
         links.forEach(link => {
             link.addEventListener('click', () => {
                 links.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
             });
+        });
+
+        // Sidebar toggle mobile
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        // Ouvrir
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+        });
+
+        // Fermer
+        sidebarClose.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+
+        // Fermer sur overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
         });
     </script>
 </div>

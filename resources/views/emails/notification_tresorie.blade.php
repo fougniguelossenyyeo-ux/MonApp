@@ -94,8 +94,9 @@
              <div class="mb-6 text-center">
                 <!-- Nouveau lien -->
                  <a href="{{ route('demandes.imprimer
-                 ', $demande->id) }}" class="btn">
-                   Valider ou Refuser la demande
+                 ', $demande->id) }}" class="btn" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
+                   Imprimer la demande
+                      </a>
                      </a>
             </div>
         </div>

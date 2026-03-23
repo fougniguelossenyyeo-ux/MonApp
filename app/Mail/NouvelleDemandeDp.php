@@ -7,34 +7,35 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class NouvelleDemandeDP extends Mailable
+
+class NouvelleDemandeDP extends Mailable 
 {
     use Queueable, SerializesModels;
 
     public $demande;
-     public $controleurs;
+    public $validateur; // Utilisateur qui recevra le mail
+
     /**
-     * Cree une instance de message.
+     * Crée une instance de message.
      */
-   public function __construct(Demande $demande, $controleurs)
-{
-    $this->demande = $demande;
-    $this->controleurs = $controleurs;
-}
-
+    public function __construct(Demande $demande, $validateur)
+    {
+        $this->demande = $demande;
+        $this->validateur = $validateur;
+    }
 
     /**
-     * construction du message.
+     * Construction du message.
      */
     public function build()
-{
-    $subject = "DPaie-{$this->demande->denomination}-{$this->demande->reference_dp}-{$this->demande->entite->libelle_entite}";
+    {
+        $subject = "DPaie-{$this->demande->denomination}-{$this->demande->reference_dp}-{$this->demande->entite->libelle_entite}";
 
-    return $this->view('emails.nouvelle_demande_dp')
-                ->subject($subject)
-                ->with([
-                    'demande' => $this->demande,
-                    'controleurs' => $this->controleurs
-                ]);
-}
+        return $this->view('emails.nouvelle_demande_dp')
+                    ->subject($subject)
+                    ->with([
+                        'demande' => $this->demande,
+                        'validateur' => $this->validateur, // ⚡ On le passe à la vue
+                    ]);
+    }
 }

@@ -15,19 +15,23 @@ class PaiementAValiderMail extends Mailable
     public $paiement;
     public $versement;
 
-    public function __construct(Paiement $paiement, PaiementVersement $versement)
-    {
-        $this->paiement = $paiement;
-        $this->versement = $versement;
-    }
+   public $responsable;
 
-    public function build()
-    {
-        return $this->view('emails.paiement_a_valider')
-            ->with([
-                'paiement' => $this->paiement,
-                'demande' => $this->paiement->demande,
-                'versement' => $this->versement,
-            ]);
-    }
+public function __construct(Paiement $paiement, PaiementVersement $versement, $responsable)
+{
+    $this->paiement = $paiement;
+    $this->versement = $versement;
+    $this->responsable = $responsable;
+}
+
+public function build()
+{
+    return $this->view('emails.paiement_a_valider')
+        ->with([
+            'paiement' => $this->paiement,
+            'versement' => $this->versement,
+            'demande' => $this->paiement->demande,
+            'responsable' => $this->responsable,
+        ]);
+}
 }

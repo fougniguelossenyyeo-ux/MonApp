@@ -40,7 +40,7 @@
         <!-- Contenu -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <p class="text-gray-700 mb-4">
-                Bonjour DG,
+                Bonjour {{ $responsable->prenom ?? 'DG' }},
             </p>
             <p class="text-gray-700 mb-4">
                 Un paiement a été déclenché pour la demande ci-dessous. Merci de valider ou refuser le paiement.
@@ -64,8 +64,9 @@
                         <p><strong>Montant total :</strong> {{ number_format($paiement->montant_a_payer,0,',',' ') }} F CFA</p>
                         <p><strong>Montant déjà payé :</strong> {{ number_format($paiement->montant_deja_paye,0,',',' ') }} F CFA</p>
                         <p><strong>Montant restant :</strong> {{ number_format($paiement->montant_restant,0,',',' ') }} F CFA</p>
-                   <p><strong>Montant de paiement souhaité :</strong> {{ number_format($versement->montant, 0, ',', ' ') }} F CFA</p>
-
+                        <p><strong>Montant du versement :</strong> {{ number_format($versement->montant, 0, ',', ' ') }} F CFA</p>
+                        <p><strong>Mode de paiement :</strong> {{ ucfirst($versement->mode_paiement ?? '-') }}</p>
+                        <p><strong>Commentaire :</strong> {{ $versement->commentaire ?? '-' }}</p>
                     </div>
 
                 </div>
@@ -73,10 +74,9 @@
 
             <!-- Lien de validation -->
             <div class="mb-6 text-center">
-                <!-- Nouveau lien -->
-                 <a href="{{ route('paiements.dg_valider', $paiement->id) }}" class="btn">
-                   Valider ou Refuser le paiement
-                     </a>
+                 <a href="{{ route('paiements.dg_valider', $paiement->id) }}" class="btn" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
+                     Valider ou Refuser le paiement
+                 </a>
             </div>
         </div>
 

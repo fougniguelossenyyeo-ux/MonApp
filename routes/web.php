@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/demandes/valider/{id}', [DemandeController::class, 'showValider'])->name('demandes.showValider');
     Route::get('/demandes/en-attente-directeur/{id}', [DemandeController::class, 'showEnAttenteDirecteur'])->name('demandes.showEnAttenteDirecteur');
     Route::get('/demandes/en-attente-daf/{id}', [DemandeController::class, 'showEnAttenteDaf'])->name('demandes.showEnAttenteDaf');
-    Route::get('/demandes/en-attente-controleur/{id}', [DemandeController::class, 'showEnAttenteControl'])->name('demandes.show_enattente');
+    Route::get('/demandes/en-attente-controleur/{id}', [DemandeController::class, 'showEnAttenteControl'])->name('demandes.showEnAttenteControl');
 
     Route::post('/demandes/valider-directeur/{id}', [DemandeController::class, 'validerDirecteur'])->name('demandes.validerDirecteur');
     Route::post('/demandes/refuser-directeur/{id}', [DemandeController::class, 'refuserDirecteur'])->name('demandes.refuserDirecteur');
@@ -134,7 +134,8 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::get('/faire-paiement', [PaiementController::class, 'index'])->name('paiements.index');
-    Route::post('/faire-paiement/search', [PaiementController::class, 'search'])->name('faire-paiement.search');
+   Route::match(['get', 'post'], '/faire-paiement/search', [PaiementController::class, 'search'])
+    ->name('faire-paiement.search');
 
     Route::get('/paiements/valides', [PaiementController::class, 'valides'])->name('paiements.valides');
     Route::get('/paiements/partiellement', [PaiementController::class, 'partiellement'])->name('paiements.partiellement');

@@ -13,208 +13,171 @@ use Illuminate\Support\Str;
 use App\Mail\PaiementAValiderMail;
 use App\Mail\PaiementValideMail;
 use App\Mail\PaiementRefuseMail;
+use Illuminate\Support\Facades\DB;
 
 class PaiementController extends Controller
 {
-    private $statutsPaiement = [
-        0 => 'Non initié',
-        1 => 'En cours',
-        2 => 'Partiellement payé',
-        3 => 'Payé',
-        -3 => 'Refusé'
-    ];
-
-    /** Recalcul des montants et du statut global */
-    private function recalculerMontantsEtStatut(Paiement $paiement)
+   
+/** Recalcul des montants et du statut global */
+ private function recalculerMontantsEtStatut(Paiement $paiement)
     {
-        $montantValide = $paiement->paiementsVersements()
-            ->where('statut_versement', 'valide')
-            ->sum('montant');
+        $paiement->montant_paye = $paiement->montantDejaPaye();
+        $paiement->montant_restant = max(0, $paiement->montant_prevu - $paiement->montant_paye);
 
-        $paiement->montant_deja_paye = $montantValide;
-        $paiement->montant_restant = max(0, $paiement->montant_a_payer - $montantValide);
-
-        // Mise à jour du statut selon les versements
-        $this->mettreAJourStatutPaiement($paiement);
-    }
-
-    /** Mettre à jour le statut d'un paiement */
-    public function mettreAJourStatutPaiement(Paiement $paiement)
-    {
-        $montantDejaPaye = $paiement->paiementsVersements
-            ->where('statut_versement', 'valide')
-            ->sum('montant');
-
-        $versementsEnAttente = $paiement->paiementsVersements
-            ->where('statut_versement', 'en_attente');
-
-        $montantRestant = max(0, $paiement->montant_a_payer - $montantDejaPaye);
-
-        if ($montantRestant == 0) {
-            $paiement->status_paiement = 3; // Payé
-        } elseif ($montantDejaPaye > 0) {
-            $paiement->status_paiement = $versementsEnAttente->isNotEmpty() ? 1 : 2; // En cours ou Partiellement payé
+        // Statut
+        if ($paiement->montant_restant == 0) {
+            $paiement->statut = 'termine';
+        } elseif ($paiement->montant_paye > 0) {
+            $paiement->statut = 'partiel';
         } else {
-            $paiement->status_paiement = $versementsEnAttente->isNotEmpty() ? 1 : 0; // En cours ou Non initié
+            $paiement->statut = 'en_attente';
         }
 
         $paiement->save();
     }
 
-    /** Page principale */
-    public function index()
+public function index()
     {
+        $dernieresDemandes = Demande::with(['paiement.paiementVersements', 'user'])
+            ->where('status', 3)
+            ->orderByDesc('date_validation_dg')
+            ->paginate(10);
+
+        foreach ($dernieresDemandes as $demande) {
+            if ($demande->paiement) {
+                $this->recalculerMontantsEtStatut($demande->paiement);
+            }
+        }
+
         return view('paiements.faire_paiement', [
-            'paiements' => collect(),
-            'demande' => null,
+            'dernieresDemandes' => $dernieresDemandes,
             'paiement' => null,
-            'statuts' => $this->statutsPaiement,
+            'demande' => null,
             'montantTotal' => 0,
             'montantDejaPaye' => 0,
             'montantRestant' => 0,
+            'versementEnAttente' => false,
             'error' => null
         ]);
-    }
+    }   
 
-    /** Recherche d'une demande */
-public function search(Request $request)
-{
-    $reference = $request->input('reference_dp');
-
-    // 1️⃣ Chercher la demande validée
-    $demande = Demande::where('reference_dp', $reference)
-        ->where('status', 3)
-        ->first();
-
-    if (!$demande) {
-        return view('paiements.faire_paiement', [
-            'error' => "Aucune demande trouvée ou non encore validée.",
-            'demande' => null,
-            'paiement' => null,
-            'montantTotal' => 0,
-            'montantDejaPaye' => 0,
-            'montantRestant' => 0,
-            'versementEnAttente' => false
-        ]);
-    }
-
-    $montantTotal = $demande->montant_paiement_fournisseur ?? 0;
-
-    // 2️⃣ Vérifier ou créer le paiement associé
-    $paiement = Paiement::firstOrCreate(
-        ['demande_id' => $demande->id],
-        [
-            'montant_a_payer' => $montantTotal,
-            'montant_deja_paye' => 0,
-            'montant_restant' => $montantTotal,
-            'status_paiement' => 0
-        ]
-    );
-
-    // 3️⃣ Recharger la relation pour récupérer les versements à jour
-    $paiement->load('paiementsVersements');
-
-    // 4️⃣ Recalculer montants à partir des versements validés
-    $montantDejaPaye = $paiement->paiementsVersements
-        ->where('statut_versement', 'valide')
-        ->sum('montant');
-
-    $montantRestant = max(0, $montantTotal - $montantDejaPaye);
-
-    // 5️⃣ Mettre à jour le statut global
-    if ($montantRestant <= 0) {
-        $paiement->status_paiement = 3; // payé
-    } elseif ($montantDejaPaye > 0) {
-        $paiement->status_paiement = 2; // partiellement payé
-    } else {
-        $paiement->status_paiement = 0; // non initié
-    }
-
-    $paiement->montant_deja_paye = $montantDejaPaye;
-    $paiement->montant_restant = $montantRestant;
-    $paiement->save();
-
-    // 6️⃣ Vérifier s'il y a un versement en attente
-    $versementEnAttente = $paiement->paiementsVersements
-        ->where('statut_versement', 'en_attente')
-        ->count() > 0;
-
-    // 7️⃣ Retourner la vue
-    return view('paiements.faire_paiement', [
-        'demande' => $demande,
-        'paiement' => $paiement,
-        'montantTotal' => $montantTotal,
-        'montantDejaPaye' => $montantDejaPaye,
-        'montantRestant' => $montantRestant,
-        'versementEnAttente' => $versementEnAttente,
-        'error' => null
-    ]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-    /** Enregistrer un nouveau versement */
-    public function payer(Request $request, $paiementId)
+ 
+ /** ─────────────────────────────────────────────
+     * Recherche d'une demande par référence
+     * ───────────────────────────────────────────── */
+    public function search(Request $request)
     {
-        $paiement = Paiement::with('demande')->findOrFail($paiementId);
+        $reference = $request->input('reference_dp');
 
-        if ($paiement->status_paiement == 3) {
-            return back()->with('error', 'Paiement déjà complètement payé.');
+        $demande = Demande::where('reference_dp', $reference)
+            ->where('status', 3)
+            ->first();
+
+        if (!$demande) {
+            return redirect()->back()->with('error', "Aucune demande trouvée ou non validée.");
         }
 
-        if ($paiement->status_paiement == -3) {
-            return back()->with('error', 'Paiement refusé, impossible de verser.');
-        }
+        $paiement = Paiement::with('paiementVersements')
+            ->where('demande_id', $demande->id)
+            ->first();
 
-        $montant = floatval($request->input('montant'));
-        $commentaire = $request->input('commentaire');
-
-        if ($montant <= 0) {
-            return back()->with('error', 'Le montant doit être supérieur à zéro.');
-        }
-
-        $montantDejaPaye = $paiement->paiementsVersements()
-            ->where('statut_versement', 'valide')
-            ->sum('montant');
-
-        $montantRestant = $paiement->montant_a_payer - $montantDejaPaye;
-
-        if ($montant > $montantRestant) {
-            return back()->with('error', 'Le montant dépasse le reste à payer.');
-        }
-
-        PaiementVersement::create([
-            'id' => Str::uuid(),
-            'paiement_id' => $paiement->id,
-            'montant' => $montant,
-            'commentaire' => $commentaire,
-            'date_versement' => now(),
-            'statut_versement' => 'en_attente'
-        ]);
+        //  Sécurité (au cas où)
+    if (!$paiement) {
+        return redirect()->back()->with('error', "Paiement introuvable pour cette demande.");
+    }
 
         $this->recalculerMontantsEtStatut($paiement);
 
-        $this->notifierDG($paiement);
+        $versementEnAttente = $paiement->paiementVersements()
+            ->where('statut_versement', 'en_attente')
+            ->exists();
 
-        return back()->with('success', "Versement de {$montant} F CFA enregistré (en attente de validation DG).");
+        return view('paiements.show', [
+            'demande' => $demande,
+            'paiement' => $paiement,
+            'montantTotal' => $paiement->montant_prevu,
+            'montantDejaPaye' => $paiement->montant_paye,
+            'montantRestant' => $paiement->montant_restant,
+            'versementEnAttente' => $versementEnAttente,
+            'error' => null,
+        ]);
     }
 
-    /** Validation DG d’un versement */
-public function validerDG($id)
+
+
+
+  /** ─────────────────────────────────────────────
+     * Enregistrer un nouveau versement
+     * ───────────────────────────────────────────── */
+public function payer(Request $request, $paiementId)
 {
-    $paiement = Paiement::with('paiementsVersements', 'demande.user')->findOrFail($id);
+    $paiement = Paiement::with('paiementVersements', 'demande.entite')->findOrFail($paiementId);
+
+    if ($paiement->statut === 'termine') {
+        return back()->with('error', 'Paiement déjà complètement payé.');
+    }
+
+    // Vérifier qu'il existe un responsable ayant la permission
+    $entiteSlug = Str::slug($paiement->demande->entite->libelle_entite, '_');
+    $responsable = User::whereHas('role.permissions', function ($q) use ($entiteSlug) {
+        $q->where('nom', "valider_paiement_niveau1_$entiteSlug");
+    })->first();
+
+    if (!$responsable) {
+        return back()->with('error', "Impossible de faire le paiement : aucun responsable ne possède la permission  Veuillez demander à l'administrateur d'attribuer la permission.");
+    }
+
+    $montant = floatval($request->input('montant'));
+    $commentaire = $request->input('commentaire');
+
+    if ($montant <= 0) {
+        return back()->with('error', 'Le montant doit être supérieur à zéro.');
+    }
+
+    $montantRestant = $paiement->montantRestant();
+
+    if ($montant > $montantRestant) {
+        return back()->with('error', 'Le montant dépasse le reste à payer.');
+    }
+
+    // Création du versement
+    $versement = PaiementVersement::create([
+        'id' => Str::uuid(),
+        'paiement_id' => $paiement->id,
+        'montant' => $montant,
+        'commentaire' => $commentaire,
+        'date_versement' => now(),
+        'statut_versement' => 'en_attente',
+    ]);
+
+    // Recalcul des montants et statut du paiement
+    $this->recalculerMontantsEtStatut($paiement);
+
+    // Envoyer le mail au responsable
+    Mail::to($responsable->email)
+        ->send(new PaiementAValiderMail($paiement, $versement));
+
+    return back()->with('success', "Versement de " . number_format($montant, 0, ',', ' ') . " F CFA enregistré et notification envoyée au responsable.");
+}
+
+/** ─────────────────────────────────────────────
+     * Validation DG d’un versement
+     * ───────────────────────────────────────────── */
+   public function validerDG($paiementId)
+{
+    $paiement = Paiement::with('paiementVersements', 'demande.user', 'demande.entite')->findOrFail($paiementId);
+
+    $user = auth()->user(); // Utilisateur connecté
+    $entiteSlug = Str::slug($paiement->demande->entite->libelle_entite, '_');
+    $permissionRequise = "valider_paiement_niveau1_$entiteSlug";
+
+    // Vérifier si l'utilisateur a la permission sur l'entité
+    if (!$user->hasPermissionTo($permissionRequise)) {
+        return back()->with('error', "Vous n'avez pas la permission de valider ce paiement pour cette entité.");
+    }
 
     // Récupérer le dernier versement en attente
-    $dernierVersement = $paiement->paiementsVersements()
+    $dernierVersement = $paiement->paiementVersements()
         ->where('statut_versement', 'en_attente')
         ->latest('created_at')
         ->first();
@@ -226,10 +189,10 @@ public function validerDG($id)
     // Valider le versement
     $dernierVersement->update(['statut_versement' => 'valide']);
 
-    // Recalculer montants et statut global
+    // Recalculer les montants et le statut global du paiement
     $this->recalculerMontantsEtStatut($paiement);
 
-    // Envoyer le mail à l'initiateur
+    // Envoyer un mail à l'initiateur
     Mail::to($paiement->demande->user->email)
         ->send(new PaiementValideMail($paiement, $dernierVersement));
 
@@ -237,12 +200,14 @@ public function validerDG($id)
 }
 
 
-    /** Refus DG d’un versement */
-    public function refuserDG($id)
+   /** ─────────────────────────────────────────────
+     * Refus DG d’un versement
+     * ───────────────────────────────────────────── */
+    public function refuserDG($paiementId)
     {
-        $paiement = Paiement::with(['paiementsVersements', 'demande.user'])->findOrFail($id);
+        $paiement = Paiement::with('paiementVersements', 'demande.user')->findOrFail($paiementId);
 
-        $dernierVersement = $paiement->paiementsVersements()
+        $dernierVersement = $paiement->paiementVersements()
             ->where('statut_versement', 'en_attente')
             ->latest('created_at')
             ->first();
@@ -252,181 +217,81 @@ public function validerDG($id)
         }
 
         $dernierVersement->update(['statut_versement' => 'refuse']);
-
         $this->recalculerMontantsEtStatut($paiement);
 
-        if ($paiement->demande && $paiement->demande->user) {
-            Mail::to($paiement->demande->user->email)->send(new PaiementRefuseMail($paiement));
-        }
+        Mail::to($paiement->demande->user->email)
+            ->send(new PaiementRefuseMail($paiement));
 
         return back()->with('error', 'Versement refusé par le DG. L’initiateur a été notifié.');
     }
 
     /** Notification DG */
    
-protected function notifierDG(Paiement $paiement)
-{
-    // On récupère le dernier versement en attente
-    $dernierVersement = $paiement->paiementsVersements()
-        ->where('statut_versement', 'en_attente')
-        ->latest('created_at')
-        ->first();
-
-    if (!$dernierVersement) {
-        return; // Aucun versement à notifier
-    }
-
-    // On récupère le DG de l'entité
-    $dgRole = \App\Models\Role::where('libelle', 'DG')
-        ->where('entite_id', $paiement->demande->entite_id)
-        ->first();
-
-    if (!$dgRole) {
-        return;
-    }
-
-    $dgs =User::where('role_id', $dgRole->id)->get();
-
-    // Envoi du mail à chaque DG
-    foreach ($dgs as $dg) {
-        Mail::to($dg->email)->send(new PaiementAValiderMail($paiement, $dernierVersement));
-    }
-}
-
-    /** Affichage détail d’un paiement */
-    public function show($id)
+   /** ─────────────────────────────────────────────
+     * Notification DG pour versement à valider
+     * ───────────────────────────────────────────── */
+    protected function notifierDG(Paiement $paiement)
     {
-        $paiement = Paiement::with(['demande', 'paiementsVersements'])->findOrFail($id);
+        $dernierVersement = $paiement->paiementVersements()
+            ->where('statut_versement', 'en_attente')
+            ->latest('created_at')
+            ->first();
 
-        return view('paiements.show_paiement', [
-            'paiement' => $paiement,
-            'montantTotal' => $paiement->montant_a_payer,
-            'montantDejaPaye' => $paiement->montant_deja_paye,
-            'montantRestant' => $paiement->montant_restant
-        ]);
+        if (!$dernierVersement) return;
+
+        $dgRole = Role::where('libelle', 'DG')
+            ->where('entite_id', $paiement->demande->entite_id)
+            ->first();
+
+        if (!$dgRole) return;
+
+        $dgs = User::where('role_id', $dgRole->id)->get();
+
+        foreach ($dgs as $dg) {
+            Mail::to($dg->email)->send(new PaiementAValiderMail($paiement, $dernierVersement));
+        }
     }
 
-    /** Paiements émis (partiels ou soldés) */
-    public function emis()
+    /** ─────────────────────────────────────────────
+     * Liste des paiements en cours (attente DG)
+     * ───────────────────────────────────────────── */
+public function encours()
 {
-    // Paiements émis (tous les versements hors refusés)
-    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
-        ->sum('montant');
-
-    // Paiements en cours (versements en attente)
-    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
-        ->sum('montant');
-
-    // Paiements partiels : somme de tous les paiements déjà versés mais non complets
-    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
+    $paiements = Paiement::with([
+            'demande.entite',
+            'demande.user',
+            'paiementVersements' => function ($q) {
+                $q->latest();
+            }
+        ])
+        ->whereHas('paiementVersements', function ($q) {
+            $q->where('statut_versement', 'en_attente');
         })
-        ->sum(function ($paiement) {
-            return $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-        });
-
-    // Paiements totalement validés : somme des paiements complètement réglés
-    $totalValide = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->demande->montant_paiement_fournisseur;
-        });
-
-    // Liste des paiements émis
-    $paiements = Paiement::with('demande')
-        ->whereIn('status_paiement', [2, 3])
-        ->orderByDesc('created_at')
-        ->paginate(12);
-
-    return view('paiements.emis', compact(
-        'paiements',
-        'totalEmis',
-        'totalEncours',
-        'totalPartiels',
-        'totalValide'
-    ));
-}
-
-    /** Paiements en cours (attente DG, demandes validées) */
-  public function encours()
-{
-    $paiements = Paiement::with(['demande', 'paiementsVersements'])
-        ->whereHas('paiementsVersements', function ($query) {
-            $query->where('statut_versement', 'en_attente');
-        })
-        ->whereHas('demande', function ($query) {
-            $query->where('status', 3); // demande validée
+        ->whereHas('demande', function ($q) {
+            $q->where('status', 3);
         })
         ->latest()
         ->paginate(12);
 
-    foreach ($paiements as $paiement) {
-        $paiement->montantDejaPaye = $paiement->paiementsVersements()
-            ->where('statut_versement', 'valide')
-            ->sum('montant');
-        $paiement->montantRestant = max(0, $paiement->montant_a_payer - $paiement->montantDejaPaye);
+    //  Calculs sans requêtes supplémentaires
+    $paiements->getCollection()->transform(function ($paiement) {
 
-        $paiement->versementsEnAttente = $paiement->paiementsVersements()
-            ->where('statut_versement', 'en_attente')
-            ->get();
-    }
+        $paiement->montant_deja_paye = $paiement->montantDejaPaye();
+        $paiement->montant_restant = $paiement->montantRestant();
 
-    // -------------------------
-    //  Calcul des totaux pour le layout
-    // -------------------------
+        // Filtrer depuis la collection déjà chargée
+        $paiement->versementsEnAttente = $paiement->paiementVersements
+            ->where('statut_versement', 'en_attente');
 
-    // 1️Paiements émis (tous les versements hors refusés)
-    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
-        ->sum('montant');
+        return $paiement;
+    });
 
-    // 2️ Paiements en cours (versements en attente)
-    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
-        ->sum('montant');
+    // Statistiques globales
+    $totalEmis = Paiement::count();
+    $totalEncours = Paiement::where('statut', 'en_attente')->count();
+    $totalPartiels = Paiement::where('statut', 'partiel')->count();
+    $totalValide = Paiement::where('statut', 'termine')->count();
 
-    // 3️Paiements partiels
-    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-        });
-
-    // 4️ Paiements totalement validés
-    $totalValide = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->demande->montant_paiement_fournisseur;
-        });
-
-    // -------------------------
-    //  Retour de la vue avec les variables nécessaires
-    // -------------------------
     return view('paiements.encours', compact(
         'paiements',
         'totalEmis',
@@ -436,58 +301,37 @@ protected function notifierDG(Paiement $paiement)
     ));
 }
 
-
-    /** Paiements partiellement payés */
+    /** ─────────────────────────────────────────────
+     * Liste des paiements partiellement payés
+     * ───────────────────────────────────────────── */
    public function partiellement()
 {
-    $paiements = Paiement::with('demande')
-        ->where('status_paiement', 2)
+    $paiements = Paiement::with([
+            'demande.entite',
+            'demande.user',
+            'paiementVersements' => function ($q) {
+                $q->latest();
+            }
+        ])
+        ->whereIn('statut', ['en_attente', 'partiel']) //  logique correcte
         ->latest()
         ->paginate(12);
 
-    // -------------------------
-    //  Calcul des totaux pour le layout
-    // -------------------------
+    //  Calculs optimisés
+    $paiements->getCollection()->transform(function ($paiement) {
 
-    // 1️ Total des paiements émis (tous les versements valides ou en attente)
-    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
-        ->sum('montant');
+        $paiement->montant_deja_paye = $paiement->montantDejaPaye();
+        $paiement->montant_restant = $paiement->montantRestant();
 
-    // 2 Total des paiements en cours (versements en attente)
-    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
-        ->sum('montant');
+        return $paiement;
+    });
 
-    // 3️Total des paiements partiels (sommes déjà versées mais non complètes)
-    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-        });
+    //  Stats (comme ailleurs)
+    $totalEmis = Paiement::count();
+    $totalEncours = Paiement::where('statut', 'en_attente')->count();
+    $totalPartiels = Paiement::where('statut', 'partiel')->count();
+    $totalValide = Paiement::where('statut', 'termine')->count();
 
-    // 4️ Total des paiements totalement validés (montant fournisseur égal au total des versements)
-    $totalValide = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->demande->montant_paiement_fournisseur;
-        });
-
-    // -------------------------
-    //  Retour de la vue avec les totaux
-    // -------------------------
     return view('paiements.partiellement', compact(
         'paiements',
         'totalEmis',
@@ -497,58 +341,33 @@ protected function notifierDG(Paiement $paiement)
     ));
 }
 
-
-    /** Paiements soldés */
+    /** ─────────────────────────────────────────────
+     * Liste des paiements soldés
+     * ───────────────────────────────────────────── */
    public function valides()
 {
-    $paiements = Paiement::with('demande')
-        ->where('status_paiement', 3)
+    $paiements = Paiement::with([
+            'demande',
+            'paiementVersements' => function ($q) {
+                $q->latest();
+            }
+        ])
+        ->where('statut', 'termine') //  filtrage direct en base
         ->latest()
         ->paginate(12);
 
-    // -------------------------
-    //  Calcul des totaux pour le layout
-    // -------------------------
+    // Calculs (optionnel mais recommandé pour cohérence avec les autres pages)
+    foreach ($paiements as $paiement) {
+        $paiement->montant_paye = $paiement->montantDejaPaye();
+        $paiement->montant_restant = $paiement->montantRestant();
+    }
 
-    // 1️ Total des paiements émis (versements valides + en attente)
-    $totalEmis = PaiementVersement::whereIn('statut_versement', ['en_attente', 'valide'])
-        ->sum('montant');
+    // Stats pour le header (important sinon erreur dans la vue)
+    $totalEmis = Paiement::count();
+    $totalEncours = Paiement::where('statut', 'en_attente')->count();
+    $totalPartiels = Paiement::where('statut', 'partiel')->count();
+    $totalValide = Paiement::where('statut', 'termine')->count();
 
-    // 2️ Total des paiements en cours (en attente de validation)
-    $totalEncours = PaiementVersement::where('statut_versement', 'en_attente')
-        ->sum('montant');
-
-    // 3️ Total des paiements partiels (versés mais pas encore complets)
-    $totalPartiels = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $totalVerse > 0 && $paiement->demande && $totalVerse < $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-        });
-
-    // 4️ Total des paiements complètement validés
-    $totalValide = Paiement::with('paiementsVersements', 'demande')
-        ->get()
-        ->filter(function ($paiement) {
-            $totalVerse = $paiement->paiementsVersements()
-                ->where('statut_versement', 'valide')
-                ->sum('montant');
-            return $paiement->demande && $totalVerse >= $paiement->demande->montant_paiement_fournisseur;
-        })
-        ->sum(function ($paiement) {
-            return $paiement->demande->montant_paiement_fournisseur;
-        });
-
-    // -------------------------
-    // Retour de la vue avec les totaux
-    // -------------------------
     return view('paiements.valides', compact(
         'paiements',
         'totalEmis',
@@ -559,27 +378,120 @@ protected function notifierDG(Paiement $paiement)
 }
 
 
-    /** Affiche le paiement à valider par le DG avec l'historique des versements */
-    public function dgValider($id)
+// Liste de tous les paiements émis (tous statuts confondus)
+
+public function emis()
 {
-    $paiement = Paiement::with(['demande.user', 'paiementsVersements'])->findOrFail($id);
+    // Récupération des paiements avec relations
+    $paiements = Paiement::with(['demande', 'paiementVersements'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(12);
 
-    // Mettre à jour le statut dans la base
-    $this->mettreAJourStatutPaiement($paiement);
+    // ==============================
+    // STATISTIQUES
+    // ==============================
 
-    // Vérifier que le paiement est toujours en cours
-    if ($paiement->status_paiement != 1) { // 1 = En cours
-        return redirect()->route('paiements.encours')
-            ->with('error', 'Vous ne pouvez pas accéder à ce paiement car il n’est plus en cours.');
+    $totalEmis = Paiement::count();
+
+    $totalEncours = Paiement::where('statut', 'en_attente')->count();
+
+    $totalPartiels = Paiement::where('statut', 'partiel')->count();
+
+    $totalValide = Paiement::where('statut', 'termine')->count();
+
+    // ==============================
+    // Adapter les champs pour la vue
+    // ==============================
+
+    $paiements->getCollection()->transform(function ($p) {
+
+        // Mapping statut vers status_paiement (pour ta vue)
+        $p->status_paiement = match ($p->statut) {
+            'en_attente' => 1,
+            'partiel' => 2,
+            'termine' => 3,
+            default => 0,
+        };
+
+        // Harmonisation des noms utilisés dans la vue
+        $p->montant_a_payer = $p->montant_prevu;
+        $p->montant_deja_paye = $p->montant_paye;
+
+        return $p;
+    });
+
+    // ==============================
+    // Retour vue
+    // ==============================
+
+    return view('paiements.emis', [
+        'paiements' => $paiements,
+        'totalEmis' => $totalEmis,
+        'totalEncours' => $totalEncours,
+        'totalPartiels' => $totalPartiels,
+        'totalValide' => $totalValide,
+    ]);
+}
+  // Affichage d’un paiement (vue normale) 
+public function show($id)
+{
+    // Récupérer le paiement par ID avec la demande et les versements
+    $paiement = Paiement::with(['demande', 'paiementVersements'])->find($id);
+
+    if (!$paiement) {
+        return redirect()->back()->with('error', 'Ce paiement n\'existe pas.');
     }
 
-    $historiqueVersements = $paiement->paiementsVersements->sortBy('date_versement');
+    // Calculer les montants déjà payés et restants
+    $paiement->montant_paye = $paiement->montantDejaPaye();
+    $paiement->montant_restant = $paiement->montantRestant();
 
-    $montantDejaPaye = $paiement->paiementsVersements
+    // Totaux pour l'affichage du header (facultatif)
+    $totalEmis     = Paiement::count();
+    $totalEncours  = Paiement::where('statut', 'en_attente')->count();
+    $totalPartiels = Paiement::where('statut', 'partiel')->count();
+    $totalValide   = Paiement::where('statut', 'termine')->count();
+
+    return view('paiements.show', compact(
+        'paiement',
+        'totalEmis',
+        'totalEncours',
+        'totalPartiels',
+        'totalValide'
+    ));
+}
+// Route spécifique pour la vue DG (avant la route dynamique)
+public function shown($paiementId)
+{
+    // Récupérer le paiement avec les relations nécessaires
+    $paiement = Paiement::with([
+        'paiementVersements',
+        'demande.user',
+        'demande.entite'
+    ])->findOrFail($paiementId);
+
+    $user = auth()->user();
+    $slug = Str::slug($paiement->demande->entite->libelle_entite, '_');
+    $permissionDG = "valider_paiement_niveau1_{$slug}";
+
+    // Vérifier si l'utilisateur a la permission via son rôle
+    $hasPermission = $user->role
+        ? $user->role->permissions->pluck('nom')->contains($permissionDG)
+        : false;
+
+    if (!$hasPermission) {
+        return redirect()->route('paiements.encours')
+                         ->with('error', "Vous n'avez pas la permission d'accéder à ce paiement.");
+    }
+
+    // Calcul des montants
+    $montantDejaPaye = $paiement->paiementVersements
         ->where('statut_versement', 'valide')
         ->sum('montant');
 
-    $montantRestant = max(0, $paiement->montant_a_payer - $montantDejaPaye);
+    $montantRestant = $paiement->demande->montant_paiement_fournisseur - $montantDejaPaye;
+
+    $historiqueVersements = $paiement->paiementVersements->sortByDesc('created_at');
 
     return view('paiements.dg_valider', [
         'paiement' => $paiement,
@@ -588,48 +500,5 @@ protected function notifierDG(Paiement $paiement)
         'historiqueVersements' => $historiqueVersements,
     ]);
 }
-public function shown($id)
-{
-    $paiement = Paiement::with(['demande.user', 'paiementsVersements'])->findOrFail($id);
-
-    // Vérifier que le paiement est uniquement partiellement payé
-    if ($paiement->status_paiement != 2) { // 2 = Partiellement payé
-        return redirect()->route('paiements.partiellement')
-            ->with('error', 'Vous ne pouvez accéder à ce paiement que s’il est partiellement payé.');
-    }
-
-    $demande = $paiement->demande;
-
-    // Montants
-    $montantDejaPaye = $paiement->paiementsVersements
-        ->where('statut_versement', 'valide')
-        ->sum('montant');
-
-    $montantTotal = $paiement->montant_a_payer;
-    $montantRestant = max(0, $montantTotal - $montantDejaPaye);
-
-    // Historique des versements
-    $historiqueVersements = $paiement->paiementsVersements->sortBy('created_at');
-
-    return view('paiements.show', [
-        'paiement' => $paiement,
-        'demande' => $demande,
-        'montantTotal' => $montantTotal,
-        'montantDejaPaye' => $montantDejaPaye,
-        'montantRestant' => $montantRestant,
-        'historiqueVersements' => $historiqueVersements,
-    ]);
-}
-
-
-
-
-//layout paiement
-
-   
-
-
-
-
 
 }

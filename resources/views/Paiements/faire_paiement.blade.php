@@ -3,150 +3,110 @@
 @section('maincontent')
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- 🔍 Section Recherche -->
+    <!-- Messages flash -->
+    @if(session('error'))
+        <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-xl shadow">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="mb-6 p-4 bg-green-100 text-green-700 rounded-xl shadow">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <!-- Recherche -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
         <form method="POST" action="{{ route('faire-paiement.search') }}" class="flex flex-col md:flex-row gap-2">
             @csrf
-            <div class="flex">
+            <div class="flex w-full">
                 <input 
                     type="text" 
                     name="reference_dp"
                     placeholder="Rechercher par numéro de DP..."
                     value="{{ old('reference_dp') }}"
-                    class="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                    class="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    aria-label="Recherche par numéro de DP"
                 >
-                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-r-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center text-sm">
-                    <i class="fas fa-search mr-2"></i> Rechercher
+                <button type="submit" 
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-r-lg font-medium hover:bg-indigo-700 text-sm">
+                    Rechercher
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Message d'erreur -->
-    @if(isset($error))
-        <div class="bg-red-100 text-red-700 p-4 rounded mb-6 text-center font-medium">
-            {{ $error }}
+    <h1 class="text-2xl font-semibold text-gray-900 mb-6">
+        Paiements
+    </h1>
+
+    <!-- Liste des paiements -->
+    @if($dernieresDemandes->isEmpty())
+        <div class="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center">
+             Aucune demande validée trouvée.
         </div>
-    @endif
+    @else
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    <!-- Si une demande est trouvée -->
-    @if($demande)
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            @foreach($dernieresDemandes as $demande)
+                @php
+                    $paiement = $demande->paiement;
+                    $montantPrevu = $paiement->montant_prevu ?? 0;
+                    $montantRestant = $paiement->montant_restant ?? 0;
+                @endphp
 
-        <!-- Informations de la demande -->
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informations de la Demande de Paiement</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <div><p class="text-sm text-gray-500">Numéro de DP</p><p class="font-medium">{{ $demande->reference_dp }}</p></div>
-                <div><p class="text-sm text-gray-500">Dénomination</p><p class="font-medium">{{ $demande->denomination }}</p></div>
-                <div><p class="text-sm text-gray-500">Fournisseur</p><p class="font-medium">{{ $demande->nom_fournisseur }}</p></div>
-                <div><p class="text-sm text-gray-500">Montant TTC</p><p class="font-medium">{{ number_format($montantTotal, 0, ',', ' ') }} F CFA</p></div>
-                <div><p class="text-sm text-gray-500">Date de paiement souhaitée</p><p class="font-medium">{{ \Carbon\Carbon::parse($demande->date_paiement)->format('d/m/Y') }}</p></div>
-                <div><p class="text-sm text-gray-500">Contact Fournisseur</p><p class="font-medium">{{ $demande->contact_fournisseur }}</p></div>
-                <div><p class="text-sm text-gray-500">Adresse Fournisseur</p><p class="font-medium">{{ $demande->adresse_fournisseur }}</p></div>
-                <div><p class="text-sm text-gray-500">Email Fournisseur</p><p class="font-medium">{{ $demande->email_fournisseur }}</p></div>
-            </div>
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col justify-between">
 
-            <div class="space-y-4">
-                <div><p class="text-sm text-gray-500">Référence Facture</p><p class="font-medium">{{ $demande->reference_facture ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Bon de Commande</p><p class="font-medium">{{ $demande->reference_bon_commande ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Contrat</p><p class="font-medium">{{ $demande->reference_contrat ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Expression de Besoin</p><p class="font-medium">{{ $demande->reference_expression_besoin ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Code Fournisseur</p><p class="font-medium">{{ $demande->code_fournisseur ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Code Analytique</p><p class="font-medium">{{ $demande->code_analytique ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Centre Analytique</p><p class="font-medium">{{ $demande->centre_analytique ?? '-' }}</p></div>
-                <div><p class="text-sm text-gray-500">Code Projet</p><p class="font-medium">{{ $demande->code_projet ?? '-' }}</p></div>
-            </div>
-        </div>
+                    <!-- Infos demande -->
+                    <div class="space-y-2">
+                        <p class="text-lg font-semibold text-gray-900">
+                            {{ $demande->reference_dp }}
+                        </p>
 
-        <!-- Objet & priorité -->
-        <div class="mt-6 border-t border-gray-200 pt-4">
-            <p class="text-sm text-gray-500 mb-1">Objet de la Dépense</p>
-            <p class="font-medium">{{ $demande->description ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-500">
+                            {{ $demande->denomination }}
+                        </p>
 
-            <div class="mt-4">
-                <p class="text-sm text-gray-500 mb-1">Priorité</p>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                    @if($demande->priorite === 'urgent') bg-red-100 text-red-800
-                    @elseif($demande->priorite === 'tres_urgent') bg-red-600 text-white
-                    @else bg-yellow-100 text-yellow-800 @endif">
-                    {{ ucfirst($demande->priorite) }}
-                </span>
-            </div>
-        </div>
+                        <div class="pt-2 space-y-1">
+                            <p class="text-sm text-gray-700 font-medium">
+                                 Montant à payer :
+                                <span class="font-semibold text-gray-900">
+                                    {{ number_format($montantPrevu, 0, ',', ' ') }} F CFA
+                                </span>
+                            </p>
 
-        <!-- Bloc Paiement -->
-        <div class="mt-8 pt-6 border-t border-gray-200">
-            <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <p class="text-sm text-gray-500">Montant total TTC</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ number_format($montantTotal, 0, ',', ' ') }} F CFA</p>
+                            <p class="text-sm text-gray-700 font-medium">
+                                 Restant :
+                                <span class="font-semibold text-gray-900">
+                                    {{ number_format($montantRestant, 0, ',', ' ') }} F CFA
+                                </span>
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Montant déjà payé</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ number_format($montantDejaPaye, 0, ',', ' ') }} F CFA</p>
+
+                    <!-- Bouton -->
+                    <div class="mt-4">
+                        @if($paiement && $montantRestant > 0)
+                            <a href="{{ route('paiements.show', $paiement->id) }}"
+                               class="block text-center w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                               aria-label="Payer la demande {{ $demande->reference_dp }}">
+                                 Payer
+                            </a>
+                        @else
+                            <button disabled 
+                                class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+                                aria-label="Paiement déjà effectué pour {{ $demande->reference_dp }}">
+                                 Payé
+                            </button>
+                        @endif
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Montant restant</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ number_format($montantRestant, 0, ',', ' ') }} F CFA</p>
-                    </div>
+
                 </div>
+            @endforeach
 
-                {{-- Conditions de paiement --}}
-                @if($paiement)
-                    @if($montantRestant <= 0 || $paiement->status_paiement == 3)
-                        <div class="mt-6 bg-green-100 text-green-800 px-4 py-3 rounded-lg text-center font-semibold">
-                            ✅ Cette demande a déjà été totalement payée. Aucun autre paiement n’est possible.
-                        </div>
-                        <div class="mt-4 text-center">
-                            <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
-                                Paiement terminé
-                            </button>
-                        </div>
-
-                    @elseif(isset($versementEnAttente) && $versementEnAttente)
-                        <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
-                            ⚠️ Un versement est en attente de validation. Vous ne pouvez pas effectuer un nouveau versement.
-                        </div>
-                        <div class="mt-4 text-center">
-                            <button disabled class="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed">
-                                Paiement en attente
-                            </button>
-                        </div>
-
-                    @else
-                        <form method="POST" action="{{ route('paiements.payer', $paiement->id) }}" class="flex flex-col sm:flex-row sm:items-center gap-2 pt-4">
-                            @csrf
-                            <div class="w-full md:w-64">
-                                <label for="paymentAmount" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Montant à payer
-                                </label>
-                                <input 
-                                    type="number" 
-                                    name="montant"
-                                    min="0"
-                                    max="{{ $montantRestant }}"
-                                    value="{{ $montantRestant }}"
-                                    required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
-                                >
-                            </div>
-                            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center mt-6 sm:mt-7 text-sm">
-                                <i class="fas fa-money-bill-wave mr-2"></i> Effectuer le paiement
-                            </button>
-                        </form>
-                    @endif
-                @else
-                    <div class="mt-6 bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg text-center font-medium">
-                        ⚠️ Aucun paiement disponible pour cette demande.
-                    </div>
-                @endif
-
-            </div>
         </div>
-    </div>
     @endif
+
 </main>
 @endsection

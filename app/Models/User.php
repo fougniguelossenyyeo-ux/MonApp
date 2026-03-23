@@ -71,11 +71,8 @@ public function hasPermission($permissionName): bool
         return true;
     }
 
-    return $this->role()
-        ->whereHas('permissions', function ($query) use ($permissionName) {
-            $query->where('nom', $permissionName);
-        })
-        ->exists();
+    // Vérifie dans la collection de permissions déjà chargée
+    return $this->role && $this->role->permissions->contains('nom', $permissionName);
 }
 // User.php
 public function canCreateDemande(): bool
