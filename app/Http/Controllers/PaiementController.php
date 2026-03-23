@@ -92,7 +92,7 @@ public function index()
             ->where('statut_versement', 'en_attente')
             ->exists();
 
-        return view('paiements.show', [
+        return view('paiements.faire_paiement', [
             'demande' => $demande,
             'paiement' => $paiement,
             'montantTotal' => $paiement->montant_prevu,
@@ -163,20 +163,25 @@ public function payer(Request $request, $paiementId)
 /** ─────────────────────────────────────────────
      * Validation DG d’un versement
      * ───────────────────────────────────────────── */
-   public function validerDG($paiementId)
+public function validerDG($paiementId)
 {
-    $paiement = Paiement::with('paiementVersements', 'demande.user', 'demande.entite')->findOrFail($paiementId);
+    $paiement = Paiement::with('paiementVersements', 'demande.user', 'demande.entite')
+        ->findOrFail($paiementId);
 
-    $user = auth()->user(); // Utilisateur connecté
-    $entiteSlug = Str::slug($paiement->demande->entite->libelle_entite, '_');
-    $permissionRequise = "valider_paiement_niveau1_$entiteSlug";
+    $user = auth()->user();
+    $slug = Str::slug($paiement->demande->entite->libelle_entite, '_');
+    $permissionRequise = "valider_paiement_niveau1_{$slug}";
 
-    // Vérifier si l'utilisateur a la permission sur l'entité
-    if (!$user->hasPermissionTo($permissionRequise)) {
-        return back()->with('error', "Vous n'avez pas la permission de valider ce paiement pour cette entité.");
+    //  Vérification de permission (COMME demandeController)
+    $hasPermission = $user->role
+        ? $user->role->permissions->pluck('nom')->contains($permissionRequise)
+        : false;
+
+    if (!$hasPermission) {
+        return back()->with('error', "Vous n'avez pas la permission de valider ce paiement.");
     }
 
-    // Récupérer le dernier versement en attente
+    //  Récupérer le dernier versement en attente
     $dernierVersement = $paiement->paiementVersements()
         ->where('statut_versement', 'en_attente')
         ->latest('created_at')
@@ -186,44 +191,66 @@ public function payer(Request $request, $paiementId)
         return back()->with('error', 'Aucun versement en attente à valider.');
     }
 
-    // Valider le versement
-    $dernierVersement->update(['statut_versement' => 'valide']);
+    //  Validation
+    $dernierVersement->update([
+        'statut_versement' => 'valide'
+    ]);
 
-    // Recalculer les montants et le statut global du paiement
+    //  Recalcul
     $this->recalculerMontantsEtStatut($paiement);
 
-    // Envoyer un mail à l'initiateur
+    //  Mail
     Mail::to($paiement->demande->user->email)
         ->send(new PaiementValideMail($paiement, $dernierVersement));
 
-    return back()->with('success', "Versement de {$dernierVersement->montant} F CFA validé et email envoyé à l'initiateur.");
+    return back()->with('success', "Versement validé avec succès.");
 }
-
 
    /** ─────────────────────────────────────────────
      * Refus DG d’un versement
      * ───────────────────────────────────────────── */
     public function refuserDG($paiementId)
-    {
-        $paiement = Paiement::with('paiementVersements', 'demande.user')->findOrFail($paiementId);
+{
+    $paiement = Paiement::with('paiementVersements', 'demande.user', 'demande.entite')
+        ->findOrFail($paiementId);
 
-        $dernierVersement = $paiement->paiementVersements()
-            ->where('statut_versement', 'en_attente')
-            ->latest('created_at')
-            ->first();
+    $user = auth()->user();
+    $slug = Str::slug($paiement->demande->entite->libelle_entite, '_');
+    $permissionRequise = "refuser_paiement_niveau1_{$slug}";
 
-        if (!$dernierVersement) {
-            return back()->with('error', 'Aucun versement en attente à refuser.');
-        }
+    //  Vérification permission (comme partout dans ton projet)
+    $hasPermission = $user->role
+        ? $user->role->permissions->pluck('nom')->contains($permissionRequise)
+        : false;
 
-        $dernierVersement->update(['statut_versement' => 'refuse']);
-        $this->recalculerMontantsEtStatut($paiement);
-
-        Mail::to($paiement->demande->user->email)
-            ->send(new PaiementRefuseMail($paiement));
-
-        return back()->with('error', 'Versement refusé par le DG. L’initiateur a été notifié.');
+    if (!$hasPermission) {
+        return back()->with('error', "Vous n'avez pas la permission de refuser ce paiement.");
     }
+
+    //  Récupérer le dernier versement en attente
+    $dernierVersement = $paiement->paiementVersements()
+        ->where('statut_versement', 'en_attente')
+        ->latest('created_at')
+        ->first();
+
+    if (!$dernierVersement) {
+        return back()->with('error', 'Aucun versement en attente à refuser.');
+    }
+
+    //  Refuser le versement
+    $dernierVersement->update([
+        'statut_versement' => 'refuse'
+    ]);
+
+    //  Recalcul du paiement
+    $this->recalculerMontantsEtStatut($paiement);
+
+    //  Notification email
+    Mail::to($paiement->demande->user->email)
+        ->send(new PaiementRefuseMail($paiement, $dernierVersement));
+
+    return back()->with('success', 'Versement refusé avec succès. L’initiateur a été notifié.');
+}
 
     /** Notification DG */
    
@@ -463,7 +490,6 @@ public function show($id)
 // Route spécifique pour la vue DG (avant la route dynamique)
 public function shown($paiementId)
 {
-    // Récupérer le paiement avec les relations nécessaires
     $paiement = Paiement::with([
         'paiementVersements',
         'demande.user',
@@ -474,15 +500,21 @@ public function shown($paiementId)
     $slug = Str::slug($paiement->demande->entite->libelle_entite, '_');
     $permissionDG = "valider_paiement_niveau1_{$slug}";
 
-    // Vérifier si l'utilisateur a la permission via son rôle
+    // Vérification permission via rôle
     $hasPermission = $user->role
         ? $user->role->permissions->pluck('nom')->contains($permissionDG)
         : false;
 
     if (!$hasPermission) {
         return redirect()->route('paiements.encours')
-                         ->with('error', "Vous n'avez pas la permission d'accéder à ce paiement.");
+            ->with('error', "Vous n'avez pas la permission d'accéder à ce paiement.");
     }
+
+    //  IMPORTANT : récupérer le versement en attente
+    $versementEnCours = $paiement->paiementVersements
+        ->where('statut_versement', 'en_attente')
+        ->sortByDesc('created_at')
+        ->first();
 
     // Calcul des montants
     $montantDejaPaye = $paiement->paiementVersements
@@ -491,14 +523,15 @@ public function shown($paiementId)
 
     $montantRestant = $paiement->demande->montant_paiement_fournisseur - $montantDejaPaye;
 
-    $historiqueVersements = $paiement->paiementVersements->sortByDesc('created_at');
+    $historiqueVersements = $paiement->paiementVersements
+        ->sortByDesc('created_at');
 
     return view('paiements.dg_valider', [
         'paiement' => $paiement,
         'montantDejaPaye' => $montantDejaPaye,
         'montantRestant' => $montantRestant,
         'historiqueVersements' => $historiqueVersements,
+        'versementEnCours' => $versementEnCours 
     ]);
 }
-
 }

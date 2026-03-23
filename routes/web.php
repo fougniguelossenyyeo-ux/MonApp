@@ -144,7 +144,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/paiements/{paiement}/payer', [PaiementController::class, 'payer'])->name('paiements.payer_unique');
 
-    Route::get('/paiements/dg-valider/{id}', [PaiementController::class, 'dgValider'])->name('paiements.dg_valider');
+// Routes spécifiques AVANT la route dynamique
     Route::post('/paiements/dg-valider/{id}', [PaiementController::class, 'validerDG'])->name('paiements.validerDG');
     Route::post('/paiements/dg-refuser/{id}', [PaiementController::class, 'refuserDG'])->name('paiements.refuserDG');
 

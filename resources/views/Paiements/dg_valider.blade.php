@@ -150,19 +150,19 @@
 
         <!-- Dernier versement en attente pour DG -->
         @php
-            $versementEnCours = $paiement->paiementVersements->where('statut_versement', 'en attente')->last();
+            $versementEnCours = $paiement->paiementVersements->where('statut_versement', 'en_attente')->last();
         @endphp
 
         @if($versementEnCours)
             <div class="flex flex-col sm:flex-row gap-4 mt-4">
-                <form action="{{ route('paiements.refuserDG', $versementEnCours->id) }}" method="POST" class="flex-1">
+ <form action="{{ route('paiements.refuserDG', $paiement->id) }}" method="POST" class="flex-1">
                     @csrf
                     <button type="submit" class="w-full py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">
                         Refuser
                     </button>
                 </form>
 
-                <form action="{{ route('paiements.validerDG', $versementEnCours->id) }}" method="POST" class="flex-1">
+              <form action="{{ route('paiements.validerDG', $paiement->id) }}" method="POST" class="flex-1">
                     @csrf
                     <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700">
                         Valider
