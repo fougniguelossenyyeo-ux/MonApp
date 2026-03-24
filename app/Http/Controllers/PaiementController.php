@@ -92,7 +92,7 @@ public function index()
             ->where('statut_versement', 'en_attente')
             ->exists();
 
-        return view('paiements.faire_paiement', [
+        return view('paiements.show_paiement', [
             'demande' => $demande,
             'paiement' => $paiement,
             'montantTotal' => $paiement->montant_prevu,
@@ -534,4 +534,33 @@ public function shown($paiementId)
         'versementEnCours' => $versementEnCours 
     ]);
 }
+public function showPaiement($id)
+{
+    // Récupérer le paiement avec sa demande et ses versements
+    $paiement = Paiement::with(['demande', 'paiementVersements'])->find($id);
+
+    if (!$paiement) {
+        return redirect()->back()->with('error', "Paiement introuvable.");
+    }
+
+    // Recalculer montants et statut
+    $this->recalculerMontantsEtStatut($paiement);
+
+    // Vérifier s'il y a un versement en attente
+    $versementEnAttente = $paiement->paiementVersements()
+        ->where('statut_versement', 'en_attente')
+        ->exists();
+
+    // Afficher la vue comme dans search()
+    return view('paiements.show_paiement', [
+        'demande' => $paiement->demande,
+        'paiement' => $paiement,
+        'montantTotal' => $paiement->montant_prevu,
+        'montantDejaPaye' => $paiement->montant_paye,
+        'montantRestant' => $paiement->montant_restant,
+        'versementEnAttente' => $versementEnAttente,
+        'error' => null,
+    ]);
+}
+
 }

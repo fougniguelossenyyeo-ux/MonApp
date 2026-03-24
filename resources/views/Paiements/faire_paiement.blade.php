@@ -85,22 +85,22 @@
                         </div>
                     </div>
 
-                    <!-- Bouton -->
-                    <div class="mt-4">
-                        @if($paiement && $montantRestant > 0)
-                            <a href="{{ route('paiements.show', $paiement->id) }}"
-                               class="block text-center w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                               aria-label="Payer la demande {{ $demande->reference_dp }}">
-                                 Payer
-                            </a>
-                        @else
-                            <button disabled 
-                                class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
-                                aria-label="Paiement déjà effectué pour {{ $demande->reference_dp }}">
-                                 Payé
-                            </button>
-                        @endif
-                    </div>
+                  <!-- Bouton -->
+<div class="mt-4">
+    @if($paiement && $montantRestant > 0)
+        <a href="{{ route('paiements.payer', $paiement->id) }}"
+           class="block text-center w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+           aria-label="Payer la demande {{ $demande->reference_dp }}">
+             Payer
+        </a>
+    @else
+        <button disabled 
+            class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+            aria-label="Paiement déjà effectué pour {{ $demande->reference_dp }}">
+             Payé
+        </button>
+    @endif
+</div>
 
                 </div>
             @endforeach

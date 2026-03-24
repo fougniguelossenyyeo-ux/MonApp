@@ -154,6 +154,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/paiements/{paiement}', [PaiementController::class, 'shown'])->name('paiements.shown');
 
 });
+Route::get('/paiement/{id}', [PaiementController::class, 'showPaiement'])
+    ->name('paiements.payer');
 // Routes de gestion des permissions (protégées par auth et vérification de permission dans le controller)
 Route::middleware(['auth'])->group(function () {
 
