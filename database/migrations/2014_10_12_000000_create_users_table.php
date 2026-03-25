@@ -31,9 +31,6 @@ return new class extends Migration
     $table->rememberToken();
     $table->timestamps();
 
-    // Index pour optimisation
-    $table->index('role_id');
-    $table->index('entite_id');
 });
     }
 

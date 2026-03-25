@@ -21,18 +21,19 @@ class PaiementVersement extends Model
     protected $fillable = [
     'paiement_id',
     'montant',
-    'mode_paiement',              
+    'mode_paiement',                
     'date_versement',
     'commentaire',
-    'statut_versement',     
+    'statut_versement',
+    'is_deleted',     
 ];
 
     protected $casts = [
         'montant'     => 'decimal:2',
         'date_versement'    => 'date',
+         'is_deleted'      => 'boolean',
         'created_at'        => 'datetime',
         'updated_at'        => 'datetime',
-        'deleted_at'        => 'datetime',
     ];
 
     protected static function booted()
@@ -63,4 +64,13 @@ class PaiementVersement extends Model
     {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
+      public function markAsDeleted(): void
+    {
+        $this->is_deleted = true;
+        $this->save();
+    }
+    public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
+}
 }

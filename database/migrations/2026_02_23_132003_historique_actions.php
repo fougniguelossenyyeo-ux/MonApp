@@ -13,37 +13,21 @@ return new class extends Migration
             // Clé primaire UUID
             $table->uuid('id')->primary();
 
-            /*
-            |--------------------------------------------------------------------------
-            | UTILISATEUR
-            |--------------------------------------------------------------------------
-            */
+            // Utilisateur ayant effectué l'action
             $table->foreignUuid('user_id')
                   ->nullable()
                   ->constrained('users')
                   ->nullOnDelete()
                   ->comment('Utilisateur ayant réalisé l\'action (NULL si supprimé)');
 
-            /*
-            |--------------------------------------------------------------------------
-            | ACTION
-            |--------------------------------------------------------------------------
-            */
+            // Type d'action
             $table->string('action', 80)
                   ->comment('Type d\'action (snake_case recommandé)');
 
-            /*
-            |--------------------------------------------------------------------------
-            | POLYMORPHISME (subject_type + subject_id UUID)
-            |--------------------------------------------------------------------------
-            */
+            // Polymorphisme (lié à n'importe quel modèle)
             $table->uuidMorphs('subject');
 
-            /*
-            |--------------------------------------------------------------------------
-            | DONNÉES SUPPLÉMENTAIRES
-            |--------------------------------------------------------------------------
-            */
+            // Données supplémentaires
             $table->json('properties')
                   ->nullable()
                   ->comment('Anciennes valeurs, nouvelles valeurs, commentaire, motif rejet, etc.');
@@ -56,31 +40,19 @@ return new class extends Migration
                   ->nullable()
                   ->comment('Navigateur / application');
 
-            /*
-            |--------------------------------------------------------------------------
-            | ENTITÉ (Filiale / Direction)
-            |--------------------------------------------------------------------------
-            */
+            // Entité concernée
             $table->foreignUuid('entite_id')
                   ->nullable()
                   ->constrained('entites')
                   ->nullOnDelete()
                   ->comment('Entité concernée');
 
-            /*
-            |--------------------------------------------------------------------------
-            | DATE
-            |--------------------------------------------------------------------------
-            */
+            // Date et heure de l'action
             $table->timestamp('created_at')
                   ->useCurrent()
                   ->comment('Date et heure exacte de l\'action');
 
-            /*
-            |--------------------------------------------------------------------------
-            | INDEX OPTIMISÉS
-            |--------------------------------------------------------------------------
-            */
+            // Index optimisés pour requêtes fréquentes
             $table->index('user_id', 'idx_hist_user');
             $table->index('action', 'idx_hist_action');
             $table->index(['subject_type', 'subject_id'], 'idx_hist_subject');

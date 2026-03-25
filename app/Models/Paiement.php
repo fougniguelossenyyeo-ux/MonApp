@@ -23,12 +23,10 @@ class Paiement extends Model
         'user_id',
         'montant_prevu',
         'montant_paye',
-        'montant_restant',
         'statut',
-        'mode_paiement',
         'reference_paiement',
         'date_paiement_effectif',
-        'notes',
+        'commentaire',
     ];
 
     protected $casts = [
@@ -36,6 +34,7 @@ class Paiement extends Model
         'montant_paye'           => 'decimal:2',
         'montant_restant'        => 'decimal:2',
         'date_paiement_effectif' => 'date',
+         'is_deleted'      => 'boolean',
     ];
 
     protected static function booted()
@@ -88,5 +87,17 @@ public function montantDejaPaye()
 public function montantRestant()
 {
     return $this->montant_prevu - $this->montantDejaPaye();
+}
+ /**
+     * Marquer le paiement comme supprimé (soft delete)
+     */
+    public function markAsDeleted(): void
+    {
+        $this->is_deleted = true;
+        $this->save();
+    }
+public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
 }
 }

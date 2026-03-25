@@ -33,23 +33,15 @@ return new class extends Migration
                   ->default(0)
                   ->comment('Cumul des versements effectués');
 
-            $table->decimal('montant_restant', 15, 2)
-                  ->default(0)
-                  ->comment('montant_prevu - montant_paye (peut être calculé)');
-
             // Statut global du paiement
             $table->enum('statut', [
                 'en_attente',       // paiement pas encore lancé
                      // ordre de paiement créé
                 'partiel',          // au moins un versement effectué
                 'termine',          // totalement payé
-                'annule',           // annulé avant exécution
-                'echec',            // rejet / erreur
             ])->default('en_attente');
 
             // Informations traçabilité (dernière opération ou globale)
-            $table->string('mode_paiement', 60)->nullable()
-                  ->comment('Mode du dernier versement ou principal');
 
             $table->string('reference_paiement', 120)->nullable()
                   ->comment('Référence globale ou du dernier versement');
@@ -57,7 +49,10 @@ return new class extends Migration
             $table->date('date_paiement_effectif')->nullable()
                   ->comment('Date du dernier versement ou date de paiement complet');
 
-            $table->text('notes')->nullable();
+            $table->text('commentaire')->nullable();
+              $table->boolean('is_deleted')
+                  ->default(false);
+            
 
             $table->timestamps();
            

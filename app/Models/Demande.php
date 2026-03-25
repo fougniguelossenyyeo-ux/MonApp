@@ -42,6 +42,7 @@ class Demande extends Model
         'date_validation_dg',
         'description',
         'motif_refus',
+        'is_deleted',
     ];
 
     protected $casts = [
@@ -49,6 +50,7 @@ class Demande extends Model
         'date_validation_controleur' => 'datetime',
         'date_validation_daf'        => 'datetime',
         'date_validation_dg'         => 'datetime',
+             'is_deleted'      => 'boolean',
     ];
 
     protected static function booted()
@@ -76,4 +78,13 @@ class Demande extends Model
     public function historiqueActions() {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
+    public function markAsDeleted()
+{
+    $this->is_deleted = true;
+    $this->save();
+}
+public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
+}
 }

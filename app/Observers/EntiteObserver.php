@@ -29,17 +29,14 @@ class EntiteObserver
                 "voir_demande_valider123_$nom",
                 "voir_demande_emis_$nom",
                 "cree_demande_$nom",
-                "refuser_demande_niveau1_$nom",
-                "refuser_demande_niveau2_$nom",
-                "refuser_demande_niveau3_$nom",
                 "initier_paiement_$nom",
                 "voir_paiement_initier_$nom",
                 "voir_paiement_niveau1_$nom",
-                "voir_paiement_niveau2_$nom",
                 "valider_paiement_niveau1_$nom",
-                "valider_paiement_niveau2_$nom",
-                "refuser_paiement_niveau1_$nom",
-                "refuser_paiement_niveau2_$nom",
+                "suprimer_demande_$nom",
+                "suprimer_paiement_$nom",
+                "voir_historique_demande_$nom",
+                "voir_historique_paiement_$nom",
                 "voir_dashboard_$nom"
             ];
 

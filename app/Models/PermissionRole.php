@@ -17,30 +17,27 @@ class PermissionRole extends Model
     protected $fillable = [
         'role_id',
         'permission_id',
+        'is_deleted',
     ];
-
-    protected static function booted()
-    {
-        static::creating(function ($pivot) {
-            if (empty($pivot->id)) {
-                $pivot->id = Str::uuid()->toString();
-            }
-        });
-    }
-
-    /**
-     * Relation avec le rôle
-     */
+protected $casts = [
+    'is_deleted' => 'boolean',
+];
     public function role()
     {
-        return $this->belongsTo(Role::class, 'role_id', 'id');
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
-    /**
-     * Relation avec la permission
-     */
     public function permission()
     {
-        return $this->belongsTo(Permission::class, 'permission_id', 'id');
+        return $this->belongsTo(Permission::class, 'permission_id');
     }
+     public function markAsDeleted(): void
+    {
+        $this->is_deleted = true;
+        $this->save();
+    } 
+        public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
+}
 }

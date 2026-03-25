@@ -12,11 +12,11 @@ class HistoriqueAction extends Model
 
     protected $table = 'historique_actions';
 
-    protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    public $timestamps = false; // Seulement created_at dans la migration
+    // Pas de updated_at, seulement created_at
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',
@@ -35,11 +35,7 @@ class HistoriqueAction extends Model
         'created_at' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relations
-    |--------------------------------------------------------------------------
-    */
+    // ───────────── Relations ─────────────
 
     public function user()
     {

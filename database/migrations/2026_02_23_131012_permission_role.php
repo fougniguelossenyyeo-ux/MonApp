@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('permission_role', function (Blueprint $table) {
             $table->uuid('role_id');                   // Clé étrangère vers roles
-            $table->uuid('permission_id');             // Clé étrangère vers permissions
+            $table->uuid('permission_id');  
+             $table->boolean('is_deleted')->default(false); // Pour audit           // Clé étrangère vers permissions
             $table->timestamps();
 
             // Définition des clés étrangères
-            $table->foreign('role_id')->references('id')->on('roles')->cascadeOnDelete();
-            $table->foreign('permission_id')->references('id')->on('permissions')->cascadeOnDelete();
+            $table->foreign('role_id')->references('id')->on('roles')->nullOnDelete();
+            $table->foreign('permission_id')->references('id')->on('permissions')->nullOnDelete();
 
             // Empêcher les doublons
             $table->unique(['role_id', 'permission_id']);

@@ -12,14 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permissions', function (Blueprint $table) {
-            $table->uuid('id')->primary();             // UUID pour chaque permission
-            $table->foreignUuid('entite_id')           // ← AJOUT UNIQUEMENT CE CHAMP
+            $table->uuid('id')->primary();                        // UUID unique
+            $table->foreignUuid('entite_id')                      // Lien vers entites
+                  ->nullable()                                   // Permet de garder la permission si l'entité est "supprimée"
                   ->constrained('entites')
-                  ->onDelete('cascade')
-                  ->comment('Entité à laquelle cette permission appartient');
-            $table->string('nom')->unique();           // Nom de la permission (ex: creer_demande)
-            $table->string('description')->nullable(); // Description détaillée
+                  ->nullOnDelete();                              // On ne supprime pas, on met null
+            $table->string('nom');                                // Nom de la permission
+            $table->string('description')->nullable();           // Description
+            $table->boolean('is_deleted')->default(false);       // Flag pour suppression logique
             $table->timestamps();
+
+            // Empêche doublons pour la même entité
+            $table->unique(['nom', 'entite_id']);
         });
     }
 

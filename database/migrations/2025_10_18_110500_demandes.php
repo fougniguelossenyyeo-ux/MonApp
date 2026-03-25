@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('reference_dp')->unique();
 
             // Liens clés étrangères
-            $table->foreignUuid('entite_id')->constrained('entites')->cascadeOnDelete();
-            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('entite_id')->constrained('entites')->nullOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->nullOnDelete();
 
             // Montants
             $table->decimal('montant_ht', 15, 2)->default(0); // Hors taxe
@@ -54,6 +54,7 @@ return new class extends Migration
             // Description et motif de refus
            
             $table->text('motif_refus')->nullable(); // Nouveau champ pour refus
+            $table->boolean('is_deleted')->default(false);// Champ pour marquer la demande comme supprimée sans la supprimer physiquement
 
             $table->timestamps();
         });

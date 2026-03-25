@@ -19,6 +19,16 @@
         .sidebar-transition {
             transition: transform 0.3s ease;
         }
+        .user-profile-link.active {
+            background: linear-gradient(to right, #6366F1, #8B5CF6);
+            border-radius: 0.5rem;
+        }
+        .user-profile-link.active p {
+            color: white !important;
+        }
+        .user-profile-link.active span {
+            color: rgba(255,255,255,0.85) !important;
+        }
     </style>
 
     <!-- Header du sidebar -->
@@ -48,39 +58,39 @@
         <div class="space-y-1">
 
             <!-- Tableau de bord -->
-            <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-home mr-3"></i>
                 <span id="dashboardText">Tableau de bord</span>
             </a>
 
             <!-- Enregistrer DP -->
             @if(Auth::user()->canCreateDemande())
-            <a href="{{ route('demandes.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : '' }}">
+            <a href="{{ route('demandes.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-plus-circle mr-3"></i>
                 <span id="registerText">Enregistrer DP</span>
             </a>
             @endif
 
             <!-- Faire un paiement -->
-            <a href="{{route('paiements.index')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiement') ? 'active' : '' }}">
+            <a href="{{ route('paiements.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiements.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-money-bill-wave mr-3"></i>
                 <span id="paymentText">Faire un paiement</span>
             </a>
 
             <!-- Demandes -->
-            <a href="{{ route('demandes.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.index') ? 'active' : '' }}">
+            <a href="{{ route('demandes.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-chart-bar mr-3"></i>
                 <span id="requestsText">Demandes</span>
             </a>
 
             <!-- Paiements -->
-            <a href="{{route('paiements.emis')}}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('archiveDP') ? 'active' : '' }}">
+            <a href="{{ route('paiements.emis') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiements.emis') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-archive mr-3"></i>
                 <span id="archivesText">Paiements</span>
             </a>
 
             <!-- Administration -->
-            <a href="{{ route('users.list') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('users.list') ? 'active' : '' }}">
+            <a href="{{ route('users.list') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('users.list') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-cog mr-3"></i>
                 <span id="adminText">Administration</span>
             </a>
@@ -89,17 +99,21 @@
 
         <!-- Profil utilisateur et logout -->
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <div class="flex items-center mb-4">
-                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span class="text-indigo-800 font-medium">
-                        {{ strtoupper(substr(Auth::user()->prenom,0,1) . substr(Auth::user()->nom,0,1)) }}
+
+            {{-- Lien profil — actif si on est sur la page d'édition de l'utilisateur connecté --}}
+            <a href="{{ route('users.edit', Auth::user()->id) }}"
+               id="userText"
+               class="user-profile-link flex items-center mb-4 px-2 py-2 transition-colors {{ request()->routeIs('users.edit') && request()->route('user') == Auth::user()->id ? 'active' : 'hover:bg-gray-100 rounded-lg' }}">
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-indigo-800 font-medium text-sm">
+                        {{ strtoupper(substr(Auth::user()->prenom, 0, 1) . substr(Auth::user()->nom, 0, 1)) }}
                     </span>
                 </div>
-                <a href="{{ route('users.edit', Auth::user()->id) }}" id="userText" class="ml-3">
-                    <p class="text-sm font-medium text-gray-900">{{ Auth::user()->nom }} {{ Auth::user()->prenom }}</p>
-                    <p class="text-xs text-gray-500">{{ Auth::user()->role?->libelle ?? 'Non défini' }}</p>
-                </a>
-            </div>
+                <div class="ml-3 overflow-hidden">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->nom }} {{ Auth::user()->prenom }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ Auth::user()->role?->libelle ?? 'Non défini' }}</p>
+                </div>
+            </a>
 
             <a href="{{ route('logout') }}" id="logoutBtn" class="w-full flex items-center justify-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                 <i class="fas fa-sign-out-alt mr-2"></i>
@@ -110,20 +124,35 @@
 
     <!-- Script JS -->
     <script>
-        // Clic actif sur les liens
-        const links = document.querySelectorAll('.sidebar-link');
-        links.forEach(link => {
+        // Gestion du clic actif sur les liens de navigation (hors profil)
+        const navLinks = document.querySelectorAll('.sidebar-link');
+        navLinks.forEach(link => {
             link.addEventListener('click', () => {
-                links.forEach(l => l.classList.remove('active'));
+                // Retirer active de tous les liens de nav
+                navLinks.forEach(l => l.classList.remove('active'));
+                // Retirer active du lien profil
+                document.getElementById('userText').classList.remove('active');
+                // Appliquer active sur le lien cliqué
                 link.classList.add('active');
             });
         });
 
+        // Gestion du clic sur le lien profil
+        const userLink = document.getElementById('userText');
+        if (userLink) {
+            userLink.addEventListener('click', () => {
+                // Retirer active de tous les liens de nav
+                navLinks.forEach(l => l.classList.remove('active'));
+                // Appliquer active sur le lien profil
+                userLink.classList.add('active');
+            });
+        }
+
         // Sidebar toggle mobile
         const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarClose = document.getElementById('sidebarClose');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
+        const sidebarClose  = document.getElementById('sidebarClose');
+        const sidebar       = document.getElementById('sidebar');
+        const overlay       = document.getElementById('overlay');
 
         // Ouvrir
         sidebarToggle.addEventListener('click', () => {
@@ -131,13 +160,13 @@
             overlay.classList.remove('hidden');
         });
 
-        // Fermer
+        // Fermer via bouton ×
         sidebarClose.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');
         });
 
-        // Fermer sur overlay
+        // Fermer en cliquant sur l'overlay
         overlay.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');

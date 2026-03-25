@@ -19,8 +19,13 @@ class Entite extends Model
     protected $fillable = [
         'libelle_entite',
         'logo',
+        'is_deleted',
     ];
-
+ protected $casts = [
+        
+         'is_deleted'      => 'boolean',
+       
+    ];
     protected static function booted()
     {
         // Génération d'UUID ordonné
@@ -72,5 +77,14 @@ class Entite extends Model
     $logoPath = preg_replace('#^logos/#', '', $this->logo);
 
     return asset('storage/logos/' . $logoPath);
+}
+public function markAsDeleted()
+{
+    $this->is_deleted = true;
+    $this->save();
+}
+public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
 }
 }

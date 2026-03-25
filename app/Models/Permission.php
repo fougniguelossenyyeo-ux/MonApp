@@ -21,8 +21,11 @@ class Permission extends Model
         'nom',
         'description',
         'entite_id',
+         'is_deleted',
     ];
-
+protected $casts = [
+    'is_deleted' => 'boolean',
+];
     protected static function booted()
     {
         static::creating(function (Permission $permission) {
@@ -47,13 +50,22 @@ class Permission extends Model
     /**
      * Les rôles qui possèdent cette permission
      */
-    public function roles()
+ public function roles()
+{
+    return $this->belongsToMany(
+        Role::class,
+        'permission_role',
+        'permission_id',
+        'role_id'
+    )->wherePivot('is_deleted', false);
+}
+  public function markAsDeleted(): void
     {
-        return $this->belongsToMany(
-            Role::class,
-            'permission_role',
-            'permission_id',
-            'role_id'
-        );
+        $this->is_deleted = true;
+        $this->save();
     }
+        public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
+}
 }

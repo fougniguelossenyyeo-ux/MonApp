@@ -270,6 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileList = document.getElementById('fileList');
 
     let currentStep = 0;
+    let selectedFiles = []; // ✅ stockage global des fichiers
+
     steps[currentStep].classList.remove('hidden');
 
     nextBtn.addEventListener('click', () => {
@@ -334,28 +336,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ============================
+    //  GESTION FICHIERS CORRIGÉE
+    // ============================
+
     fileButton.addEventListener('click', () => fileInput.click());
-    
+
     fileInput.addEventListener('change', () => {
-        const files = Array.from(fileInput.files);
-        const names = files.map(f => f.name).join(', ');
-        fileNames.textContent = names || 'Aucun fichier choisi';
-        
-        // Afficher la liste des fichiers
+        const newFiles = Array.from(fileInput.files);
+
+        newFiles.forEach(file => {
+            if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                selectedFiles.push(file);
+            }
+        });
+
+        updateFileDisplay();
+
+        // reset input pour permettre re-upload même fichier
+        fileInput.value = '';
+    });
+
+    function updateFileDisplay() {
+        fileNames.textContent = selectedFiles.map(f => f.name).join(', ') || 'Aucun fichier choisi';
+
         fileList.innerHTML = '';
-        files.forEach((file, index) => {
+
+        selectedFiles.forEach((file, index) => {
             const fileItem = document.createElement('div');
             fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200';
+
             fileItem.innerHTML = `
                 <div class="flex items-center">
                     <i class="fas fa-file-pdf text-red-500 mr-3"></i>
                     <span class="text-sm text-gray-700">${file.name}</span>
                     <span class="text-xs text-gray-500 ml-2">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                 </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-sm">
+                    Supprimer
+                </button>
             `;
+
+            fileItem.querySelector('button').addEventListener('click', () => {
+                selectedFiles.splice(index, 1);
+                updateFileDisplay();
+            });
+
             fileList.appendChild(fileItem);
         });
+    }
+
+    // 🔥 IMPORTANT : injecter fichiers avant submit
+    dpForm.addEventListener('submit', function() {
+        const dataTransfer = new DataTransfer();
+
+        selectedFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        fileInput.files = dataTransfer.files;
     });
+
+    // ============================
+    //  REVIEW
+    // ============================
 
     function updateReview() {
         const montantHT = parseFloat(document.getElementById('amount_ht').value) || 0;
@@ -363,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const ttc = montantHT + (montantHT * tvaPourcentage / 100);
         document.getElementById('hiddenTTC').value = ttc.toFixed(2);
 
-        // Récupérer tous les champs
         const data = {
             'Dénomination': document.getElementById('requester').value || '-',
             'Entité': document.getElementById('entity').selectedOptions[0]?.text || '-',
@@ -374,15 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Montant HT': montantHT ? montantHT.toFixed(2) + ' F CFA' : '0.00 F CFA',
             'TVA (%)': tvaPourcentage ? tvaPourcentage.toFixed(2) + ' %' : '0.00 %',
             'Montant TTC': ttc ? ttc.toFixed(2) + ' F CFA' : '0.00 F CFA',
-            'Référence Facture': document.getElementById('invoice_ref').value || '-',
-            'Référence Bon de Commande': document.getElementById('order_ref').value || '-',
-            'Référence Contrat': document.getElementById('contract_ref').value || '-',
-            'Référence Expression de Besoin': document.getElementById('requirement_ref').value || '-',
-            'Code Analytique': document.getElementById('analytical_code').value || '-',
-            'Centre Analytique': document.getElementById('analytical_center').value || '-',
-            'Code Projet': document.getElementById('project_code').value || '-',
-            'Code Fournisseur': document.getElementById('supplier_code').value || '-',
-            'Fichiers joints': Array.from(fileInput.files).map(f => f.name).join(', ') || 'Aucun fichier'
+            'Fichiers joints': selectedFiles.map(f => f.name).join(', ') || 'Aucun fichier'
         };
 
         reviewSection.innerHTML = '<tbody>';

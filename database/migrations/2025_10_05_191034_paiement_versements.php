@@ -19,7 +19,8 @@ return new class extends Migration
             $table->timestamp('date_versement')->useCurrent(); // Date du versement
             $table->string('commentaire')->nullable(); // Commentaire optionnel
             $table->string('statut_versement')->default('en_attente'); // valeurs possibles : valide, refuse et en attente
-
+               $table->string('mode_paiement')->nullable()->after('montant');
+            $table->boolean('is_deleted')->default(false);
             $table->timestamps();
         });
     }

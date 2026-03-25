@@ -143,7 +143,7 @@ public function store(Request $request)
         $validated = $request->validate([
             'denomination' => 'required|string|max:255',
             'entite_id' => 'required|uuid|exists:entites,id',
-            'montant_ht' => 'required|numeric|min:0',
+            'montant_ht' => 'required|numeric|min:1',
             'tva' => 'required|string|in:' . implode(',', array_keys($tvaOptions)),
             'contact_fournisseur' => 'required|string|max:20',
             'adresse_fournisseur' => 'required|string',
@@ -158,7 +158,17 @@ public function store(Request $request)
             'centre_analytique' => 'nullable|string|max:255',
             'code_projet' => 'nullable|string|max:255',
             'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:102400',
-        ]);
+        ],[
+    'denomination.required' => 'La dénomination est obligatoire',
+    'entite_id.required' => 'Veuillez sélectionner une entité',
+    'entite_id.exists' => 'Entité invalide',
+    'montant_ht.required' => 'Le montant est obligatoire',
+    'montant_ht.numeric' => 'Le montant doit être un nombre',
+    'montant_ht.min' => 'Le montant doit être supérieur à 0',
+    'email_fournisseur.email' => 'Email invalide',
+    'pieces_jointes.*.mimes' => 'Seuls les fichiers PDF sont autorisés',
+    'pieces_jointes.*.max' => 'Chaque fichier ne doit pas dépasser 100MB',
+]);
 
         $entite = Entite::findOrFail($validated['entite_id']);
         $slugEntite = Str::slug($entite->libelle_entite, '_');
@@ -205,12 +215,12 @@ public function store(Request $request)
         }
 
         //  Création de la demande
-        $demande = \App\Models\Demande::create($validated);
+        $demande = Demande::create($validated);
 
         //  Envoi du mail aux validateurs
         foreach ($validateurs as $user) {
             Mail::to($user->email)->send(
-                new \App\Mail\NouvelleDemandeDP($demande, $user)
+                new NouvelleDemandeDP($demande, $user)
             );
         }
 

@@ -16,7 +16,7 @@ class User extends Authenticatable
     protected $keyType = 'string';
 
     protected $fillable = [
-        'nom', 'prenom', 'email', 'poste', 'signature', 'entite_id', 'role_id', 'password'
+        'nom', 'prenom', 'email', 'poste', 'signature', 'entite_id', 'role_id', 'password', 'is_deleted',
     ];
 
     protected $hidden = [
@@ -26,6 +26,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_deleted'  => 'boolean',
     ];
 
     protected static function booted()
@@ -72,22 +73,12 @@ public function hasPermission($permissionName): bool
     }
 
     // Vérifie dans la collection de permissions déjà chargée
-    return $this->role && $this->role->permissions->contains('nom', $permissionName);
+    return $this->role && $this->role->permissions->contains('nom', $permissionName)->exists();
 }
-// User.php
-public function canCreateDemande(): bool
-{
-    // Si super admin → toujours vrai
-    if ($this->role && $this->role->super_admin) {
-        return true;
-    }
 
-    // Vérifie si le rôle a au moins une permission 'cree_demande_...' liée à une entité
-    return $this->role
-                ? $this->role->permissions()
-                    ->where('nom', 'like', 'cree_demande_%')
-                    ->exists()
-                : false;
+    public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
 }
 
     

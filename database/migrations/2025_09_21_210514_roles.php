@@ -13,6 +13,8 @@ return new class extends Migration
             $table->string('libelle'); // Exemple: caissiere, controleur, daf, dg, admin
             $table->foreignUuid('entite_id')->nullable()->constrained('entites')->nullOnDelete();
             $table->boolean('super_admin')->default(false);
+              $table->boolean('is_deleted')
+                  ->default(false);
             $table->timestamps();
             
 

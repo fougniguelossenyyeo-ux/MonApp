@@ -19,8 +19,13 @@ class Role extends Model
     protected $fillable = [
         'libelle', 
         'entite_id',
+         'is_deleted',
+          'super_admin',
     ];
-
+ protected $casts = [
+        'super_admin' => 'boolean',
+        'is_deleted'  => 'boolean',
+    ];
     protected static function booted()
     {
         static::creating(function ($role) {
@@ -54,4 +59,13 @@ class Role extends Model
     {
         return $this->belongsTo(Entite::class, 'entite_id');
     }
+     public function markAsDeleted(): void
+    {
+        $this->is_deleted = true;
+        $this->save();
+    }
+        public function scopeActifs($query)
+{
+    return $query->where('is_deleted', false);
+}
 }
