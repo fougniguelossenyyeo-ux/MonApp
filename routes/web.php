@@ -8,6 +8,7 @@ use App\Http\Controllers\EntiteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\HistoriqueActionController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -179,4 +180,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
         ->name('permissions.save');
 
+
+// Routes pour l’historique des actions (protégées par auth)
+Route::get('/historique', [HistoriqueActionController::class, 'index'])
+     ->name('historiques.index');
+Route::get('/historique/filter', [HistoriqueActionController::class, 'filter'])->name('historiques.filter');
 });

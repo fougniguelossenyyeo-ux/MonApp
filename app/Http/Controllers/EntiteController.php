@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Entite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Auth;
 class EntiteController extends Controller
 {
     public function __construct()
@@ -47,7 +47,8 @@ class EntiteController extends Controller
         'libelle_entite' => $request->libelle_entite,
         'logo' => $logoPath,
     ]);
-
+  // Historiser
+   $entite->logAction('creer', ['valeurs' => $entite->toArray()]);
     return redirect()->route('entites.index')
                      ->with('success', 'Entité créée avec succès.');
 }
@@ -63,7 +64,8 @@ class EntiteController extends Controller
             'libelle_entite' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-
+  // Historiser les anciennes valeurs avant modification
+    $oldValues = $entite->getOriginal(); // Récupère les valeurs avant modification
         if ($request->hasFile('logo')) {
             if ($entite->logo) {
                 Storage::disk('public')->delete($entite->logo);
@@ -73,28 +75,39 @@ class EntiteController extends Controller
 
         $entite->libelle_entite = $request->libelle_entite;
         $entite->save();
-
+// Historiser les modifications
+    $changes = $entite->getChanges(); // seulement les colonnes modifiées
+    $entite->logAction('modifier', [
+        'anciennes_valeurs' => $oldValues,
+        'modifications' => $changes,
+    ]);
         return redirect()->route('entites.index')->with('success', 'Entité mise à jour.');
     }
-
+// Soft delete de l'entité  // Historiser la suppression avant de marquer comme supprimé
 public function destroy(Entite $entite)
 {
-    // Supprimer le logo (optionnel selon ton besoin)
+    // Historiser l'entité avant suppression
+    $entite->logAction('supprimer', [
+        'valeurs' => $entite->toArray(),
+    ]);
+
+    // Supprimer le logo
     if ($entite->logo) {
         Storage::disk('public')->delete('logos/' . $entite->logo);
     }
 
-    // Marquer les permissions comme supprimées (soft delete)
-    $entite->permissions()->update([
-        'is_deleted' => true
-    ]);
+    // Historiser et soft delete des permissions
+    foreach ($entite->permissions as $permission) {
+        $permission->logAction('supprimer', [
+            'valeurs' => $permission->toArray(),
+        ]);
+        $permission->update(['is_deleted' => true]);
+    }
 
-    // Marquer l'entité comme supprimée
-    $entite->update([
-        'is_deleted' => true
-    ]);
+    // Soft delete de l'entité
+    $entite->update(['is_deleted' => true]);
 
     return redirect()->route('entites.index')
-        ->with('success', 'Entité supprimée .');
+        ->with('success', 'Entité supprimée.');
 }
 }

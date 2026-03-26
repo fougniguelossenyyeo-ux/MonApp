@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-
+use App\Traits\Historisable;
 class Demande extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
 
     protected $table = 'demandes';
 
@@ -72,7 +72,7 @@ class Demande extends Model
     public function user()     { return $this->belongsTo(User::class); }
     public function entite()   { return $this->belongsTo(Entite::class); }
     public function paiement() { return $this->hasOne(Paiement::class); }
-    public function versements() {
+    public function Paiementversements() {
         return $this->hasManyThrough(PaiementVersement::class, Paiement::class, 'demande_id', 'paiement_id');
     }
     public function historiqueActions() {
@@ -87,4 +87,5 @@ public function scopeActifs($query)
 {
     return $query->where('is_deleted', false);
 }
+ 
 }
