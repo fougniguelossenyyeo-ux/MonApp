@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Historisable;
 use Illuminate\Support\Str;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class PaiementVersement extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
    
 
     protected $table = 'paiement_versements';
@@ -25,7 +26,8 @@ class PaiementVersement extends Model
     'date_versement',
     'commentaire',
     'statut_versement',
-    'is_deleted',     
+    'is_deleted',
+    'motif_refus_versement',     
 ];
 
     protected $casts = [
@@ -73,4 +75,5 @@ class PaiementVersement extends Model
 {
     return $query->where('is_deleted', false);
 }
+
 }

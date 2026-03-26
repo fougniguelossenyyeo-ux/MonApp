@@ -13,11 +13,12 @@ class EntiteController extends Controller
         $this->middleware('auth');
     }
 
-    public function indexe()
-    {
-        $entites = Entite::all();
-        return view('entites.index', compact('entites'));
-    }
+ public function indexe()
+{
+    // Récupérer uniquement les entités actives (non supprimées)
+    $entites = Entite::actif()->get();
+    return view('entites.index', compact('entites'));
+}
 
     public function create()
     {
@@ -76,17 +77,24 @@ class EntiteController extends Controller
         return redirect()->route('entites.index')->with('success', 'Entité mise à jour.');
     }
 
-  public function destroy(Entite $entite)
+public function destroy(Entite $entite)
 {
+    // Supprimer le logo (optionnel selon ton besoin)
     if ($entite->logo) {
-        Storage::disk('public')->delete($entite->logo);
+        Storage::disk('public')->delete('logos/' . $entite->logo);
     }
 
-    // Supprime les permissions liées
-    $entite->permissions()->delete();
+    // Marquer les permissions comme supprimées (soft delete)
+    $entite->permissions()->update([
+        'is_deleted' => true
+    ]);
 
-    $entite->delete();
+    // Marquer l'entité comme supprimée
+    $entite->update([
+        'is_deleted' => true
+    ]);
 
-    return redirect()->route('entites.index')->with('success', 'Entité supprimée.');
+    return redirect()->route('entites.index')
+        ->with('success', 'Entité supprimée .');
 }
 }

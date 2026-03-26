@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Traits\Historisable;
 use Illuminate\Support\Str;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class Paiement extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
  
 
     protected $table = 'paiements';
@@ -100,4 +101,5 @@ public function scopeActifs($query)
 {
     return $query->where('is_deleted', false);
 }
+
 }

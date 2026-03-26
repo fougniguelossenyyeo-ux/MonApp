@@ -64,12 +64,15 @@
             </a>
 
             <!-- Enregistrer DP -->
-            @if(Auth::user()->canCreateDemande())
-            <a href="{{ route('demandes.create') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
-                <i class="fas fa-plus-circle mr-3"></i>
-                <span id="registerText">Enregistrer DP</span>
-            </a>
-            @endif
+           @if(Auth::user()->hasPermission('cree_demande'))
+<a href="{{ route('demandes.create') }}" 
+   class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.create') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
+    
+    <i class="fas fa-plus-circle mr-3"></i>
+    <span id="registerText">Enregistrer DP</span>
+
+</a>
+@endif
 
             <!-- Faire un paiement -->
             <a href="{{ route('paiements.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiements.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">

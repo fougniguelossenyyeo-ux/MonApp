@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
+use App\Traits\Historisable;
 class Entite extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
 
     protected $table = 'entites';
 
@@ -83,8 +83,13 @@ public function markAsDeleted()
     $this->is_deleted = true;
     $this->save();
 }
-public function scopeActifs($query)
+public function scopeActif($query)
 {
     return $query->where('is_deleted', false);
 }
+   // Relation morphMany pour HistoriqueActions via le trait
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
+    }
 }

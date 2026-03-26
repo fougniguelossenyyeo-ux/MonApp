@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\Historisable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Permission extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
 
     protected $table = 'permissions';
 
@@ -67,5 +69,9 @@ protected $casts = [
         public function scopeActifs($query)
 {
     return $query->where('is_deleted', false);
+}
+public function historiqueActions()
+{
+    return $this->morphMany(HistoriqueAction::class, 'subject');
 }
 }

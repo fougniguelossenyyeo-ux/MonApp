@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use App\Traits\Historisable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Role extends Model
 {
-    use HasFactory;
+    use HasFactory, Historisable;
 
     protected $table = 'roles';
     public $incrementing = false;
@@ -67,5 +68,9 @@ class Role extends Model
         public function scopeActifs($query)
 {
     return $query->where('is_deleted', false);
+}
+public function historiqueActions()
+{
+    return $this->morphMany(HistoriqueAction::class, 'subject');
 }
 }
