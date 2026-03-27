@@ -6,7 +6,7 @@
     'totalEnAttenteDaf' => $totalEnAttenteDaf,
     'totalEnAttenteDirecteur' => $totalEnAttenteDirecteur,
     'totalValide' => $totalValide,
-    'tauxTraitement' => $tauxTraitement,
+    
 ])
 
 <!-- Contenu principal -->
@@ -152,9 +152,17 @@
                 <div class="mt-3 flex justify-between items-center pt-3 border-t border-gray-100">
                     <span class="text-xs text-gray-500">Date de création : {{ $a->created_at?->format('d/m/Y H:i') }}</span>
                     <div class="flex space-x-2">
-                        <a href="{{ route('demandes.showEnAttenteControl', $a->id) }}" class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                            Voir détails
-                        </a>
+        @if($permissions->contains('valider_demande_niveau1_' . Str::slug($a->entite->libelle_entite, '_')))
+    <a href="{{ route('demandes.showEnAttenteControl', $a->id) }}"
+       class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+        Voir détails
+    </a>
+@else
+    <button onclick="showPermissionError()"
+        class="text-red-600 hover:text-red-800 text-xs font-medium">
+        Voir détails
+    </button>
+@endif
                     </div>
                 </div>
             </div>
@@ -195,25 +203,14 @@ document.getElementById('closeDetailModal').addEventListener('click', () => {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    @if(session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Succès',
-            text: "{{ session('success') }}",
-            timer: 3000,
-            showConfirmButton: false
-        });
-    @endif
-
-    @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: "{{ session('error') }}",
-            timer: 3000,
-            showConfirmButton: false
-        });
-    @endif
+    function showPermissionError() {
+    Swal.fire({
+        icon: 'error',
+        title: 'Accès refusé',
+        text: "Vous n'avez pas la permission de valider cette demande",
+        confirmButtonColor: '#6366f1',
+    });
+}
 });
 </script>
 @endsection

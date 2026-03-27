@@ -24,18 +24,31 @@ class DemandeController extends Controller
 
 private function verifierPermission($user, $demande, $niveau)
 {
-    // Transformer le nom de l'entité en slug
+    //  Vérifications de sécurité
+    if (!$user || !$user->role || !$demande || !$demande->entite) {
+        return false;
+    }
+    //  Slug de l'entité
     $slugEntite = Str::slug($demande->entite->libelle_entite, '_');
-
-    // Construire le nom de permission
+    // Permission demandée (niveau courant)
     $permissionName = "valider_demande_niveau{$niveau}_{$slugEntite}";
-   
+    // Liste des permissions du rôle
+    $permissions = $user->role->permissions->pluck('nom');
+    //  Cas 1 : permission exacte
+    if ($permissions->contains($permissionName)) {
+        return true;
+    }
+    //  Cas 2 : permission globale niveau123
+    // uniquement si la demande est totalement validée (status = 3)
+    $permissionGlobale = "valider_demande_niveau123_{$slugEntite}";
+    if (
+        $permissions->contains($permissionGlobale) 
+        && $demande->status == 3
+    ) {
+        return true;
+    }
 
-    // Vérifier si l'utilisateur possède cette permission
-    return $user->role
-        ->permissions
-        ->where('nom', $permissionName)
-        ->isNotEmpty();
+    return false;
 }
 // envoie de mail vers les utilisateurs du niveau de validation suivant
 private function envoyerNotificationNiveau($demande, $niveau, $cc = [])
@@ -158,17 +171,7 @@ public function store(Request $request)
             'centre_analytique' => 'nullable|string|max:255',
             'code_projet' => 'nullable|string|max:255',
             'pieces_jointes.*' => 'nullable|file|mimes:pdf|max:102400',
-        ],[
-    'denomination.required' => 'La dénomination est obligatoire',
-    'entite_id.required' => 'Veuillez sélectionner une entité',
-    'entite_id.exists' => 'Entité invalide',
-    'montant_ht.required' => 'Le montant est obligatoire',
-    'montant_ht.numeric' => 'Le montant doit être un nombre',
-    'montant_ht.min' => 'Le montant doit être supérieur à 0',
-    'email_fournisseur.email' => 'Email invalide',
-    'pieces_jointes.*.mimes' => 'Seuls les fichiers PDF sont autorisés',
-    'pieces_jointes.*.max' => 'Chaque fichier ne doit pas dépasser 100MB',
-]);
+        ]);
 
         $entite = Entite::findOrFail($validated['entite_id']);
         $slugEntite = Str::slug($entite->libelle_entite, '_');
@@ -187,7 +190,7 @@ public function store(Request $request)
         if ($validateurs->isEmpty()) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', "Impossible de créer la demande : aucun utilisateur n'a la permission '$permissionName' pour l'entité '{$entite->libelle_entite}'.");
+                ->with('error', "Impossible de créer la demande : aucun utilisateur n'a la permission  pour valider sur  l'entité {$entite->libelle_entite}.");
         }
 
         // Calcul du montant TTC
@@ -256,8 +259,14 @@ public function show(Demande $demande)
    
 public function enattenteControl()
 {
-    $demandes = Demande::where('status', 0)
-        ->orderBy('created_at', 'desc')
+     $user = Auth::user();
+
+    // Récupérer toutes les permissions du rôle
+    $permissions = $user->role->permissions->pluck('nom');
+
+    $demandes = Demande::with(['entite','user'])
+        ->where('status', 0)
+        ->orderBy('created_at','desc')
         ->paginate(12);
 
     // Calculs pour le dashboard
@@ -267,10 +276,8 @@ public function enattenteControl()
     $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
     $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
 
-    // Taux de traitement (exemple simple)
-    $tauxTraitement = $totalDemandes > 0 
-        ? round(($totalValide / $totalDemandes) * 100, 2) 
-        : 0;
+   
+   
 
     return view('demandes.controleur', compact(
         'demandes',
@@ -279,7 +286,8 @@ public function enattenteControl()
         'totalEnAttenteDaf',
         'totalEnAttenteDirecteur',
         'totalValide',
-        'tauxTraitement'
+        'permissions'
+       
     ));
 }
 

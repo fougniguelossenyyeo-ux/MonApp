@@ -26,6 +26,7 @@ class EntiteObserver
                 "valider_demande_niveau3_$nom",
                 "voir_demande_valider1_$nom",
                 "voir_demande_valider2_$nom",
+                "voir_demande_valider3_$nom",
                 "voir_demande_valider123_$nom",
                 "voir_demande_emis_$nom",
                 "cree_demande_$nom",

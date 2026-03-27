@@ -2,6 +2,7 @@
 @section('maincontent')
 <div id="mainContent" class="flex items-center justify-center min-h-screen bg-gray-100">
     <main class="w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
+        
         <!-- Step Progress -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
             <div class="flex items-center justify-between">
@@ -256,6 +257,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
     const dpForm = document.getElementById('dpForm');
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
@@ -264,23 +266,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const stepIndicators = document.querySelectorAll('.step-indicator');
     const stepProgress = document.querySelectorAll('.step-progress');
     const reviewSection = document.getElementById('reviewSection');
-    const fileInput = document.getElementById('fileInput');
-    const fileButton = document.getElementById('fileButton');
-    const fileNames = document.getElementById('fileNames');
-    const fileList = document.getElementById('fileList');
+
+    const amountInput = document.getElementById('amount_ht');
 
     let currentStep = 0;
-    let selectedFiles = []; // ✅ stockage global des fichiers
+    let selectedFiles = [];
 
     steps[currentStep].classList.remove('hidden');
 
+    // =========================
+    //  VALIDATION PAR STEP
+    // ========================
+    function validateStep(step) {
+
+       if (step === 0) {
+    const denomination = document.getElementById('requester').value.trim();
+    const entite = document.getElementById('entity').value;
+
+    return denomination.length > 0 && entite !== "";
+}
+
+        if (step === 1) {
+            const montant = parseFloat(document.getElementById('amount_ht').value);
+            const expression = document.getElementById('requirement_ref').value.trim();
+
+            return montant > 0 && expression.length > 0;
+        }
+
+        return true;
+    }
+
+    function updateNextButton() {
+        if (validateStep(currentStep)) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            nextBtn.disabled = true;
+            nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    // =========================
+    // 🔄 NAVIGATION
+    // =========================
     nextBtn.addEventListener('click', () => {
+        if (!validateStep(currentStep)) return;
+
         if(currentStep < steps.length - 1) {
             steps[currentStep].classList.add('hidden');
             currentStep++;
             steps[currentStep].classList.remove('hidden');
             updateStepIndicators();
             updateButtons();
+            updateNextButton();
+
             if(currentStep === steps.length - 1) updateReview();
         }
     });
@@ -292,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             steps[currentStep].classList.remove('hidden');
             updateStepIndicators();
             updateButtons();
+            updateNextButton();
         }
     });
 
@@ -304,41 +344,42 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateStepIndicators() {
         stepIndicators.forEach((indicator, index) => {
             const textElement = indicator.nextElementSibling.querySelector('p');
+
             if (index < currentStep) {
-                indicator.classList.remove('bg-gray-200', 'text-gray-500');
-                indicator.classList.add('bg-indigo-600', 'text-white');
+                indicator.classList.add('bg-indigo-600','text-white');
                 indicator.innerHTML = '<i class="fas fa-check"></i>';
-                textElement.classList.remove('text-gray-500');
                 textElement.classList.add('text-indigo-600');
             } else if (index === currentStep) {
-                indicator.classList.remove('bg-gray-200', 'text-gray-500');
-                indicator.classList.add('bg-indigo-600', 'text-white');
+                indicator.classList.add('bg-indigo-600','text-white');
                 indicator.innerHTML = `<span>${index + 1}</span>`;
-                textElement.classList.remove('text-gray-500');
-                textElement.classList.add('text-gray-900');
             } else {
-                indicator.classList.remove('bg-indigo-600', 'text-white');
-                indicator.classList.add('bg-gray-200', 'text-gray-500');
-                indicator.innerHTML = `<span>${index + 1}</span>`;
-                textElement.classList.remove('text-indigo-600', 'text-gray-900');
-                textElement.classList.add('text-gray-500');
-            }
-        });
-
-        stepProgress.forEach((progress, index) => {
-            if (index < currentStep) {
-                progress.classList.remove('bg-gray-200', 'w-0');
-                progress.classList.add('bg-indigo-600', 'w-full');
-            } else {
-                progress.classList.remove('bg-indigo-600', 'w-full');
-                progress.classList.add('bg-gray-200', 'w-0');
+                indicator.classList.remove('bg-indigo-600','text-white');
             }
         });
     }
 
-    // ============================
-    //  GESTION FICHIERS CORRIGÉE
-    // ============================
+    // =========================
+    // MONTANT POSITIF
+    // =========================
+    amountInput.addEventListener('input', function () {
+        if (this.value < 0) this.value = 0;
+        updateNextButton();
+    });
+
+    // =========================
+    // WATCH INPUTS
+    // =========================
+    document.getElementById('requester').addEventListener('input', updateNextButton);
+    document.getElementById('requirement_ref').addEventListener('input', updateNextButton);
+    document.getElementById('entity').addEventListener('change', updateNextButton);
+
+    // =========================
+    //  FICHIERS
+    // =========================
+    const fileInput = document.getElementById('fileInput');
+    const fileButton = document.getElementById('fileButton');
+    const fileNames = document.getElementById('fileNames');
+    const fileList = document.getElementById('fileList');
 
     fileButton.addEventListener('click', () => fileInput.click());
 
@@ -352,85 +393,100 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         updateFileDisplay();
-
-        // reset input pour permettre re-upload même fichier
         fileInput.value = '';
     });
 
     function updateFileDisplay() {
-        fileNames.textContent = selectedFiles.map(f => f.name).join(', ') || 'Aucun fichier choisi';
+        fileNames.textContent = selectedFiles.map(f => f.name).join(', ') || 'Aucun fichier';
 
         fileList.innerHTML = '';
 
         selectedFiles.forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200';
+            const div = document.createElement('div');
 
-            fileItem.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-file-pdf text-red-500 mr-3"></i>
-                    <span class="text-sm text-gray-700">${file.name}</span>
-                    <span class="text-xs text-gray-500 ml-2">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+            div.innerHTML = `
+                <div class="flex justify-between p-2 border rounded">
+                    <span>${file.name}</span>
+                    <button type="button">❌</button>
                 </div>
-                <button type="button" class="text-red-500 hover:text-red-700 text-sm">
-                    Supprimer
-                </button>
             `;
 
-            fileItem.querySelector('button').addEventListener('click', () => {
+            div.querySelector('button').onclick = () => {
                 selectedFiles.splice(index, 1);
                 updateFileDisplay();
-            });
+            };
 
-            fileList.appendChild(fileItem);
+            fileList.appendChild(div);
         });
     }
 
-    // 🔥 IMPORTANT : injecter fichiers avant submit
     dpForm.addEventListener('submit', function() {
         const dataTransfer = new DataTransfer();
-
-        selectedFiles.forEach(file => {
-            dataTransfer.items.add(file);
-        });
-
+        selectedFiles.forEach(file => dataTransfer.items.add(file));
         fileInput.files = dataTransfer.files;
     });
 
-    // ============================
-    //  REVIEW
-    // ============================
+    // =========================
+    //  REVIEW (TVA FIX)
+    // =========================
+   function updateReview() {
 
-    function updateReview() {
-        const montantHT = parseFloat(document.getElementById('amount_ht').value) || 0;
-        const tvaPourcentage = parseFloat(document.getElementById('tva').value) || 0;
-        const ttc = montantHT + (montantHT * tvaPourcentage / 100);
-        document.getElementById('hiddenTTC').value = ttc.toFixed(2);
+    const montantHT = parseFloat(document.getElementById('amount_ht').value) || 0;
 
-        const data = {
-            'Dénomination': document.getElementById('requester').value || '-',
-            'Entité': document.getElementById('entity').selectedOptions[0]?.text || '-',
-            'Contact Téléphonique': document.getElementById('contact').value || '-',
-            'Adresse': document.getElementById('address').value || '-',
-            'Email': document.getElementById('email').value || '-',
-            'Description': (document.getElementById('description').value || '-').replace(/\n/g, '<br>'),
-            'Montant HT': montantHT ? montantHT.toFixed(2) + ' F CFA' : '0.00 F CFA',
-            'TVA (%)': tvaPourcentage ? tvaPourcentage.toFixed(2) + ' %' : '0.00 %',
-            'Montant TTC': ttc ? ttc.toFixed(2) + ' F CFA' : '0.00 F CFA',
-            'Fichiers joints': selectedFiles.map(f => f.name).join(', ') || 'Aucun fichier'
-        };
+    const tvaText = document.getElementById('tva').value;
+    const match = tvaText.match(/(\d+(\.\d+)?)/);
+    const tva = match ? parseFloat(match[0]) : 0;
 
-        reviewSection.innerHTML = '<tbody>';
-        for (const key in data) {
-            reviewSection.innerHTML += `
-                <tr class="border-b border-gray-200">
-                    <td class="px-6 py-4 font-medium text-gray-700 w-1/2">${key}</td>
-                    <td class="px-6 py-4 text-gray-900 w-1/2">${data[key]}</td>
-                </tr>
-            `;
-        }
-        reviewSection.innerHTML += '</tbody>';
+    const ttc = montantHT + (montantHT * tva / 100);
+
+    document.getElementById('hiddenTTC').value = ttc.toFixed(2);
+
+    const data = {
+        // STEP 1
+        'Dénomination': document.getElementById('requester').value || '-',
+        'Entité': document.getElementById('entity').selectedOptions[0]?.text || '-',
+        'Contact Téléphonique': document.getElementById('contact').value || '-',
+        'Adresse': document.getElementById('address').value || '-',
+        'Email': document.getElementById('email').value || '-',
+
+        //  STEP 2
+        'Description': (document.getElementById('description').value || '-').replace(/\n/g, '<br>'),
+        'Référence Facture': document.getElementById('invoice_ref').value || '-',
+        'Référence Bon de Commande': document.getElementById('order_ref').value || '-',
+        'Référence Contrat': document.getElementById('contract_ref').value || '-',
+        'Expression de besoin': document.getElementById('requirement_ref').value || '-',
+        'Montant HT': montantHT ? montantHT.toFixed(2) + ' FCFA' : '0.00 FCFA',
+        'TVA': tvaText,
+        'Montant TTC': ttc ? ttc.toFixed(2) + ' FCFA' : '0.00 FCFA',
+
+        //  STEP 3
+        'Code Analytique': document.getElementById('analytical_code').value || '-',
+        'Centre Analytique': document.getElementById('analytical_center').value || '-',
+        'Code Projet': document.getElementById('project_code').value || '-',
+        'Code Fournisseur': document.getElementById('supplier_code').value || '-',
+
+        //  STEP 4
+        'Fichiers joints': selectedFiles.length > 0 
+            ? selectedFiles.map(f => f.name).join(', ') 
+            : 'Aucun fichier'
+    };
+
+    reviewSection.innerHTML = '<tbody>';
+
+    for (const key in data) {
+        reviewSection.innerHTML += `
+            <tr class="border-b border-gray-200">
+                <td class="px-6 py-4 font-medium text-gray-700 w-1/2">${key}</td>
+                <td class="px-6 py-4 text-gray-900 w-1/2">${data[key]}</td>
+            </tr>
+        `;
     }
+
+    reviewSection.innerHTML += '</tbody>';
+}
+
+    // init
+    updateNextButton();
 });
 </script>
 
@@ -442,8 +498,8 @@ document.addEventListener('DOMContentLoaded', function() {
         Swal.fire({
             icon: 'success',
             title: 'Succès',
-            text: "{{ session('success') }}",
-            timer: 3000,
+            text: "{{!! session('success') !!}}",
+            timer: 4000,
             showConfirmButton: false
         });
     @endif
@@ -452,8 +508,8 @@ document.addEventListener('DOMContentLoaded', function() {
         Swal.fire({
             icon: 'error',
             title: 'Erreur',
-            text: "{{ session('error') }}",
-            timer: 3000,
+            text: "{{!! session('error') !!}}",
+            timer: 4000,
             showConfirmButton: false
         });
     @endif

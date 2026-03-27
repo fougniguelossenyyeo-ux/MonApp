@@ -103,7 +103,7 @@ $controleur = $validateur;
           <!-- Closing -->
 <div class="mb-6 text-center">
     <!-- Lien vers la consultation de la demande entière -->
-<a href="{{ route('demandes.show_enattente', $demande->id, true) }}"  
+<a href="{{ route('demandes.showEnAttenteControl', $demande->id, true) }}"  
       style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
        Consulter et valider/refuser la demande
     </a>
