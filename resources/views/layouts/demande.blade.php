@@ -6,22 +6,21 @@
 
     // Toujours visible
     $cards[] = 'emises';
+ $count = count($cards);
 
-    if ($permissions->contains('voir_demande_valider1_' . $nom)) {
-        $cards[] = 'controleur';
-    }
-
-    if ($permissions->contains('voir_demande_valider2_' . $nom)) {
-        $cards[] = 'daf';
-    }
-
-    if ($permissions->contains('voir_demande_valider3_' . $nom)) {
-        $cards[] = 'dg';
-    }
-
-    if ($permissions->contains('voir_demande_valider123_' . $nom)) {
-        $cards[] = 'valide';
-    }
+  if ($count == 1) {
+    $gridClass = 'grid-cols-1';
+} elseif ($count == 2) {
+    $gridClass = 'grid-cols-1 md:grid-cols-2';
+} elseif ($count == 3) {
+    $gridClass = 'grid-cols-1 md:grid-cols-3';
+} elseif ($count == 4) {
+    $gridClass = 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+} elseif ($count == 5) {
+    $gridClass = 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5';
+} else {
+    $gridClass = 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+}
 
     $count = count($cards);
 
@@ -55,7 +54,7 @@
              @if(in_array('controleur', $cards))
             @if($permissions->contains('voir_demande_valider1_' . $nom))
             <a href="{{ route('demandes.enAttenteControl') }}" class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                <div class="text-sm font-medium opacity-90">En attente de validation au niveau 1</div>
+                <div class="text-sm font-medium opacity-90">validation contrôleur</div>
                 <div class="text-2xl font-bold mt-1">
                     {{ number_format($totalEnAttenteControleur ?? 0, 0, ',', ' ') }} F CFA
                 </div>
@@ -67,7 +66,7 @@
          @if(in_array('daf', $cards))
             @if($permissions->contains('voir_demande_valider2_' . $nom))
             <a href="{{ route('demandes.enAttenteDaf') }}" class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                <div class="text-sm font-medium opacity-90">En attente de validation au niveau 2</div>
+                <div class="text-sm font-medium opacity-90">validation DAF</div>
                 <div class="text-2xl font-bold mt-1">
                     {{ number_format($totalEnAttenteDaf ?? 0, 0, ',', ' ') }} F CFA
                 </div>
@@ -79,7 +78,7 @@
             <!-- DG -->
             @if($permissions->contains('voir_demande_valider3_' . $nom))
             <a href="{{ route('demandes.enAttenteDirecteur') }}" class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                <div class="text-sm font-medium opacity-90">En attente de validation au niveau 3</div>
+                <div class="text-sm font-medium opacity-90">validation DG</div>
                 <div class="text-2xl font-bold mt-1">
                     {{ number_format($totalEnAttenteDirecteur ?? 0, 0, ',', ' ') }} F CFA
                 </div>

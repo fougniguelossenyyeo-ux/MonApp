@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Demande;
 use App\Models\Entite;
 use App\Models\User;
+use App\Models\HistoriqueAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -103,27 +104,7 @@ public function index()
         ->orderBy('created_at', 'desc')
         ->paginate(12); // Pagination
 
-    // Calcul des totaux pour le dashboard (somme des montants)
-    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
-    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
-    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
-
-    // Taux de traitement
-    $tauxTraitement = $totalDemandes > 0 
-        ? round(($totalValide / $totalDemandes) * 100, 2) 
-        : 0;
-
-    return view('demandes.index', compact(
-        'demandes',
-        'totalDemandes',
-        'totalEnAttenteControleur',
-        'totalEnAttenteDaf',
-        'totalEnAttenteDirecteur',
-        'totalValide',
-        'tauxTraitement'
-    ));
+    return view('demandes.index', compact('demandes'));
 }
 
 
@@ -230,7 +211,19 @@ public function store(Request $request)
 
         //  Création de la demande
         $demande = Demande::create($validated);
-
+   HistoriqueAction::create([
+    'user_id'      => auth()->id(),
+    'action'       => 'soumettre_demande',
+    'subject_type' => Demande::class,
+    'subject_id'   => $demande->id,
+    'entite_id'    => $validated['entite_id'],
+    'properties'   => [
+        'reference_dp' => $demande->reference_dp,
+        'montant_ht'   => $demande->montant_ht,
+        'montant_ttc'  => $demande->montant_paiement_fournisseur,
+    ],
+    'created_at'   => now(),
+      ]);
         //  Envoi du mail aux validateurs
         foreach ($validateurs as $user) {
             Mail::to($user->email)->send(
@@ -310,8 +303,8 @@ public function showEnAttenteControl($id)
     $pieces = $demande->pieces_jointes 
         ? json_decode($demande->pieces_jointes, true) 
         : [];
-
-    return view('demandes.show_enattente', compact('demande','pieces'));
+  $peutValiderNiveau2 = $this->verifierExistenceValidateurNiveauSuivant($demande, 2);
+    return view('demandes.show_enattente', compact('demande','pieces', 'peutValiderNiveau2'));
 }
 
 
@@ -341,6 +334,19 @@ public function validerControleur($id)
     $demande->status = 1;
     $demande->date_validation_controleur = now();
     $demande->save();
+  //  ENREGISTREMENT HISTORIQUE
+    HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'valider_niveau1',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
 
     //  Notification vers le niveau suivant (DAF)
     $this->envoyerNotificationNiveau($demande, 2);
@@ -376,7 +382,20 @@ public function refuserControleur(Request $request, $id)
      $demande->refuse_par = $user->prenom . ' ' . $user->nom;
     $demande->date_validation_controleur = now();
     $demande->save();
-
+ // HISTORIQUE
+    HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'refus_niveau1',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'motif_refus'  => $request->motif_refus,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
     //  Email
     if ($demande->user && $demande->user->email) {
         Mail::to($demande->user->email)
@@ -429,8 +448,8 @@ public function showEnAttenteDaf($id)
     $pieces = $demande->pieces_jointes 
         ? json_decode($demande->pieces_jointes, true) 
         : [];
-
-    return view('demandes.show_enAttenteDaf', compact('demande','pieces'));
+ $peutValiderNiveau3 = $this->verifierExistenceValidateurNiveauSuivant($demande, 3);
+    return view('demandes.show_enAttenteDaf', compact('demande','pieces', 'peutValiderNiveau3'));
 }
 
 //validation du DAF
@@ -455,7 +474,19 @@ public function validerDaf($id)
     $demande->status = 2;
     $demande->date_validation_daf = now();
     $demande->save();
-
+    //  HISTORIQUE
+    HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'valider_niveau2',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
     // CC
     $cc = [];
 
@@ -503,7 +534,20 @@ public function refuserDaf(Request $request,$id)
     $demande->motif_refus = $request->motif_refus; //  important
     $demande->date_validation_daf = now();
     $demande->save();
-
+    //  HISTORIQUE
+    HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'refuser_niveau2',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'motif_refus'  => $request->motif_refus,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
     //  Construire le slug de l'entité
     $slug = Str::slug($demande->entite->libelle_entite, '_');
 
@@ -540,11 +584,6 @@ public function enAttenteDirecteur()
     // Calculs pour le dashboard
  
 
-    // Taux de traitement (exemple simple)
-    $tauxTraitement = $totalDemandes > 0 
-        ? round(($totalValide / $totalDemandes) * 100, 2) 
-        : 0;
-
     // Retour de la vue avec dashboard
     return view('demandes.directeur', compact(
         'demandes',
@@ -580,7 +619,7 @@ public function showEnAttenteDirecteur($id)
 public function validerDirecteur($id)
 {
     $demande = Demande::with('entite', 'user')->findOrFail($id);
-
+     $user = Auth::user();
     if ($demande->status != 2) {
         return redirect()->route('demandes.enAttenteDirecteur')
                          ->with('error', 'Impossible de valider cette demande.');
@@ -590,7 +629,18 @@ public function validerDirecteur($id)
     $demande->status = 3; 
     $demande->date_validation_dg = now();
     $demande->save();
-
+ HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'valider_niveau3',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
     // Créer le paiement (une seule fois)
     $demande->paiement()->create([
         'user_id' => auth()->id(),
@@ -648,7 +698,20 @@ public function refuserDirecteur(Request $request, $id)
     $demande->motif_refus = $request->motif_refus; //  important
     $demande->date_validation_dg = now();
     $demande->save();
-
+    // HISTORIQUE
+    HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'refuser_niveau3',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+            'motif_refus'  => $request->motif_refus,
+            'status'       => $demande->status,
+        ],
+        'created_at'   => now(),
+    ]);
     //  Construire le slug de l'entité
     $slug = Str::slug($demande->entite->libelle_entite, '_');
 
@@ -726,9 +789,18 @@ public function showValider($id)
 }
 //impression demandes de paiements
 public function imprimer($id)
-{
+{  $user = Auth::user();
     $demande = Demande::with('user', 'entite')->findOrFail($id);
-
+        HistoriqueAction::create([
+        'user_id'      => $user->id,
+        'action'       => 'imprimer',
+        'subject_type' => Demande::class,
+        'subject_id'   => $demande->id,
+        'entite_id'    => $demande->entite_id,
+        'properties'   => [
+            'reference_dp' => $demande->reference_dp,
+        ],
+        ]);
     // Affiche la vue HTML pour impression
     return view('demandes.dp_imprimer', compact('demande'));
 }

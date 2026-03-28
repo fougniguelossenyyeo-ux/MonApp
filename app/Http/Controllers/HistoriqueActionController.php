@@ -7,64 +7,66 @@ use App\Models\HistoriqueAction;
 use App\Models\User;
 use App\Models\Demande;
 use App\Models\PaiementVersement;
+
 class HistoriqueActionController extends Controller
 {
     /**
      * Affiche la liste de tous les historiques d'action
      */
-public function index()
-{
-    // Récupérer les historiques avec les relations nécessaires
-    $historiques = HistoriqueAction::with([
-        'user',
-        'entite',
-        'subject.paiement.demande'
-    ])->latest()->paginate(10);
+    public function index()
+    {
+        $historiques = HistoriqueAction::with([
+            'user',
+            'entite',
+        ])
+        ->latest()
+        ->paginate(10);
 
-    // Récupérer tous les utilisateurs pour le filtre
-    $users = User::orderBy('nom')->get();
+        $users = User::orderBy('nom')->get();
 
-    // Retourner la vue avec historiques et utilisateurs
-    return view('historiques.index', compact('historiques', 'users'));
-}
-public function filter(Request $request) 
-{
-    $query = HistoriqueAction::with([
-        'user',
-        'entite',
-        'subject.paiement.demande'
-    ]);
-
-    //  Filtre utilisateur
-    if ($request->user_id) {
-        $query->where('user_id', $request->user_id);
+        return view('historiques.index', compact('historiques', 'users'));
     }
 
-    //  Filtre modèle
-    if ($request->subject_type) {
+    /**
+     * Filtrage des historiques
+     */
+    public function filter(Request $request) 
+    {
+        $query = HistoriqueAction::with([
+            'user',
+            'entite',
+        ]);
 
-        if ($request->subject_type == 'DemandePaiement') {
-            $query->where('subject_type', 'Demande');
+        //  Filtre utilisateur
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
         }
 
-        if ($request->subject_type == 'PaiementVersement') {
-            $query->where('subject_type', 'PaiementVersement');
+        //  Filtre modèle (polymorphique)
+        if ($request->filled('subject_type')) {
+
+            if ($request->subject_type === 'Demande') {
+                $query->where('subject_type', Demande::class);
+            }
+
+            if ($request->subject_type === 'PaiementVersement') {
+                $query->where('subject_type', PaiementVersement::class);
+            }
         }
+
+        //  Filtre date
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $historiques = $query->latest()->paginate(10);
+
+        $users = User::orderBy('nom')->get();
+
+        return view('historiques.index', compact('historiques', 'users'));
     }
-
-    //  Filtre date
-    if ($request->date_from) {
-        $query->whereDate('created_at', '>=', $request->date_from);
-    }
-
-    if ($request->date_to) {
-        $query->whereDate('created_at', '<=', $request->date_to);
-    }
-
-    $historiques = $query->latest()->paginate(10);
-
-    $users = User::orderBy('nom')->get();
-
-    return view('historiques.index', compact('historiques', 'users'));
-}
 }

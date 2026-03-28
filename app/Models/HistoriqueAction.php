@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-
 class HistoriqueAction extends Model
 {
     use HasFactory, HasUuids;
@@ -16,7 +15,7 @@ class HistoriqueAction extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    // Pas de updated_at, seulement created_at
+    // Pas de updated_at / deleted_at
     public $timestamps = false;
 
     protected $fillable = [
@@ -52,88 +51,75 @@ class HistoriqueAction extends Model
     {
         return $this->belongsTo(Entite::class);
     }
-public function getDetailAttribute()
-{
-    $model = strtolower(class_basename($this->subject_type));
 
-    //  Entité toujours affichée
-    $entite = $this->entite?->libelle_entite ?? 'Non définie';
+    // ───────────── Accessor ─────────────
 
-    $reference = null;
+    public function getDetailAttribute()
+    {
+        $model = strtolower(class_basename($this->subject_type));
 
-    if ($this->subject) {
+        // Entité
+        $entite = $this->entite?->libelle_entite ?? 'Non définie';
 
-        // Cas Demande
-        if (isset($this->subject->reference_dp)) {
-            $reference = $this->subject->reference_dp;
+        // Référence (gestion sécurisée)
+        $reference = $this->resolveReference();
+
+        // Libellé action
+        $texte = $this->resolveActionLabel($model);
+
+        // Ajouter référence si existe
+        if ($reference) {
+            $texte .= " ($reference)";
         }
 
-        //  Cas Paiement
-        elseif (isset($this->subject->demande)) {
-            $reference = $this->subject->demande->reference_dp ?? null;
-        }
+        // Ajouter entité
+        $texte .= " pour l'entité $entite";
 
-        //  Cas PaiementVersement (TON CAS )
-        elseif (isset($this->subject->paiement)) {
-            $reference = $this->subject->paiement->demande->reference_dp ?? null;
-        }
-
-        // fallback
-        else {
-            $reference = $this->subject->id;
-        }
+        return $texte;
     }
 
-    //  Actions métier
-    $texte = match (true) {
+    // ───────────── Helpers ─────────────
 
-        // ───────── DEMANDE ─────────
-        $this->action === 'soumettre_demande'
-            => "Soumission d'une demande",
+    /**
+     * Déterminer la référence selon le type de sujet
+     */
+    private function resolveReference(): ?string
+    {
+        if (!$this->subject) {
+            return null;
+        }
 
-        $this->action === 'valider_niveau1'
-            => "Validation niveau 1 de la demande",
-
-        $this->action === 'valider_niveau2'
-            => "Validation niveau 2 de la demande",
-
-        $this->action === 'valider_niveau3'
-            => "Validation niveau 3 de la demande",
-
-        $this->action === 'refuser_niveau1'
-            => "Refus niveau 1 de la demande",
-
-        $this->action === 'refuser_niveau2'
-            => "Refus niveau 2 de la demande",
-
-        $this->action === 'refuser_niveau3'
-            => "Refus niveau 3 de la demande",
-
-        $this->action === 'imprimer'
-            => "Impression de la demande",
-
-        // ───────── VERSEMENT ─────────
-        $this->action === 'soumettre_versement'
-            => "Soumission du versement du paiement",
-
-        $this->action === 'valider_versement'
-            => "Validation du versement du paiement",
-
-        $this->action === 'refuser_versement'
-            => "Refus du versement du paiement",
-
-        // ───────── PAR DEFAUT ─────────
-        default => ucfirst($this->action) . " de $model",
-    };
-
-    //  Ajouter référence
-    if ($reference) {
-        $texte .= " ($reference)";
+        return $this->subject->reference_dp
+            ?? $this->subject->demande?->reference_dp
+            ?? $this->subject->paiement?->demande?->reference_dp
+            ?? $this->subject->paiement?->reference_dp
+            ?? $this->subject->id;
     }
 
-    //  Ajouter entité
-    $texte .= " pour l'entité $entite";
+    /**
+     * Générer le libellé de l'action
+     */
+    private function resolveActionLabel(string $model): string
+    {
+        return match ($this->action) {
 
-    return $texte;
-}
+            // ───────── DEMANDE ─────────
+            'soumettre_demande'   => "Soumission d'une demande",
+            'valider_niveau1'     => "Validation niveau 1 de la demande",
+            'valider_niveau2'     => "Validation niveau 2 de la demande",
+            'valider_niveau3'     => "Validation niveau 3 de la demande",
+            'refuser_niveau1'     => "Refus niveau 1 de la demande",
+            'refuser_niveau2'     => "Refus niveau 2 de la demande",
+            'refuser_niveau3'     => "Refus niveau 3 de la demande",
+            'imprimer'            => "Impression de la demande",
+
+            // ───────── VERSEMENT ─────────
+            'soumettre_versement'  => "Soumission du versement",
+            'valider_versement'    => "Validation du versement",
+            'refuser_versement'    => "Refus du versement",
+
+            // ───────── DEFAULT ─────────
+            default => ucfirst($this->action) . " de $model",
+        };
+    }
 }

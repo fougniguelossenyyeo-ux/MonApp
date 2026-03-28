@@ -179,13 +179,14 @@
         </div>
 
         <!-- ACCEPTER -->
-        <form action="{{ route('demandes.validerControleur', $demande->id) }}" method="POST" class="flex-1">
-            @csrf
-            <button type="submit" 
-                class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
-                Accepter
-            </button>
-        </form>
+       <form id="validerForm" action="{{ route('demandes.validerControleur', $demande->id) }}" method="POST" class="flex-1">
+    @csrf
+    <button type="button" 
+        onclick="validerDemande()"
+        class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+        Accepter
+    </button>
+</form>
 
     </div>
 
@@ -267,6 +268,38 @@ function refuserDemande() {
         if (result.isConfirmed) {
             document.getElementById('motif_refus').value = result.value;
             document.getElementById('refusForm').submit();
+        }
+    });
+
+}
+// =========================
+// VALIDATION AVEC SWEETALERT   
+function validerDemande() {
+
+    let peutValider = @json($peutValiderNiveau2);
+
+    if (!peutValider) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Action impossible',
+            text: "Aucun utilisateur n'a la permission de valider au niveau suivant (DAF).",
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    // Confirmation avant validation
+    Swal.fire({
+        title: 'Confirmation',
+        text: "Voulez-vous vraiment valider cette demande ?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Oui, valider',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#16a34a'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('validerForm').submit();
         }
     });
 }

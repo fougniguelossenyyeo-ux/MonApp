@@ -243,6 +243,33 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('overflow-hidden'); // Débloque le scroll arrière-plan
     }
 });
+function refuserDemande() {
+    Swal.fire({
+        title: 'Motif du refus',
+        input: 'textarea',
+        inputLabel: 'Veuillez saisir la raison du refus',
+        inputPlaceholder: 'Ex: Pièces justificatives manquantes...',
+        inputAttributes: {
+            'aria-label': 'Motif du refus'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Refuser',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('Le motif est obligatoire ❗');
+                return false;
+            }
+            return value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('motif_refus').value = result.value;
+            document.getElementById('refusForm').submit();
+        }
+    });
+}
 </script>
 
 
