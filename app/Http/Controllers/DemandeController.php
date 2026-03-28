@@ -81,6 +81,17 @@ private function envoyerNotificationNiveau($demande, $niveau, $cc = [])
         }
     }
 }
+// Vérifie s'il existe au moins un validateur pour le niveau suivant
+private function verifierExistenceValidateurNiveauSuivant($demande, $niveauSuivant)
+{
+    $slugEntite = Str::slug($demande->entite->libelle_entite, '_');
+
+    $permission = "valider_demande_niveau{$niveauSuivant}_{$slugEntite}";
+
+    return User::whereHas('role.permissions', function ($query) use ($permission) {
+        $query->where('nom', $permission);
+    })->exists();
+}
 
     /**
      * Liste toutes les demandes
@@ -270,22 +281,10 @@ public function enattenteControl()
         ->paginate(12);
 
     // Calculs pour le dashboard
-    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
-    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
-    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
-
-   
-   
+  
 
     return view('demandes.controleur', compact(
         'demandes',
-        'totalDemandes',
-        'totalEnAttenteControleur',
-        'totalEnAttenteDaf',
-        'totalEnAttenteDirecteur',
-        'totalValide',
         'permissions'
        
     ));
@@ -315,93 +314,98 @@ public function showEnAttenteControl($id)
     return view('demandes.show_enattente', compact('demande','pieces'));
 }
 
+
+
 public function validerControleur($id)
 {
     $demande = Demande::with('entite', 'user')->findOrFail($id);
 
     $user = Auth::user();
 
+    //  Vérifier si la demande est encore en attente
     if ($demande->status != 0) {
         return redirect()->back()->with('error', 'Cette demande ne peut plus être validée.');
     }
 
+    //  Vérification permission du niveau 1 (contrôleur)
     if (!$this->verifierPermission($user, $demande, 1)) {
         abort(403, "Vous n'avez pas la permission de valider cette demande.");
     }
 
+    // Vérifier l'existence d'un validateur au niveau suivant (niveau 2)
+    if (!$this->verifierExistenceValidateurNiveauSuivant($demande, 2)) {
+        return redirect()->back()->with('error', "Aucun utilisateur n'a la permission pour valider au niveau suivant.");
+    }
+
+    // Validation
     $demande->status = 1;
     $demande->date_validation_controleur = now();
     $demande->save();
 
-    // Envoyer notification niveau 2
+    //  Notification vers le niveau suivant (DAF)
     $this->envoyerNotificationNiveau($demande, 2);
 
     return redirect()->route('demandes.enAttenteControl')
-                     ->with('success', 'Demande envoyée au niveau suivant.');
+        ->with('success', 'Demande envoyée au niveau suivant.');
 }
 
 
-
-public function refuserControleur($id)
+public function refuserControleur(Request $request, $id)
 {
     $demande = Demande::with('user', 'entite')->findOrFail($id);
     $user = Auth::user();
 
-    // Vérifier si le statut est valide pour refus
+    //  Validation du motif
+    $request->validate([
+        'motif_refus' => 'required|string|max:1000'
+    ]);
+
+    //  Vérifier statut
     if ($demande->status != 0) {
         return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
     }
 
-    // Vérifier si l'utilisateur a la permission de refuser (niveau 1)
+    // Vérifier permission
     if (!$this->verifierPermission($user, $demande, 1)) {
         abort(403, "Vous n'avez pas la permission de refuser cette demande.");
     }
 
-    // Mettre à jour le statut pour refus
-    $demande->status = -1; // Refusé par le contrôleur
+    //  Mise à jour
+    $demande->status = -1;
+    $demande->motif_refus = $request->motif_refus; //  important
+     $demande->refuse_par = $user->prenom . ' ' . $user->nom;
     $demande->date_validation_controleur = now();
     $demande->save();
 
-    // Envoyer un mail à l'initiateur
+    //  Email
     if ($demande->user && $demande->user->email) {
         Mail::to($demande->user->email)
             ->send(new DemandeRefusee($demande));
     }
 
     return redirect()->route('demandes.enAttenteControl')
-                     ->with('error', 'La demande a été refusée et l’initiateur a été notifié.');
+        ->with('error', 'La demande a été refusée avec succès.');
 }
 // DemandeController.php
 
 public function enAttenteDaf()
 {
+     $user = Auth::user();
+
+    // Récupérer toutes les permissions du rôle
+    $permissions = $user->role->permissions->pluck('nom');
     // Liste paginée des demandes en attente DAF
     $demandes = Demande::with(['entite', 'user'])
         ->where('status', 1) // status 1 = en attente DAF
         ->orderByDesc('created_at')
         ->paginate(12);
 
-    // Calculs pour le dashboard
-    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
-    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
-    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
 
-    // Taux de traitement (exemple simple)
-    $tauxTraitement = $totalDemandes > 0 
-        ? round(($totalValide / $totalDemandes) * 100, 2) 
-        : 0;
-
+  
     // Vue LISTE avec dashboard
     return view('demandes.daf', compact(
         'demandes',
-        'totalDemandes',
-        'totalEnAttenteControleur',
-        'totalEnAttenteDaf',
-        'totalEnAttenteDirecteur',
-        'totalValide',
-        'tauxTraitement'
+          'permissions'
     ));
 }
 
@@ -475,11 +479,14 @@ public function validerDaf($id)
                      ->with('success', 'Demande validée et envoyée au niveau suivant.');
 }
 
-public function refuserDaf($id)
+public function refuserDaf(Request $request,$id)
 {
     $demande = Demande::with('user', 'entite')->findOrFail($id);
     $user = Auth::user();
-
+    //  Validation du motif
+    $request->validate([
+        'motif_refus' => 'required|string|max:1000'
+    ]);
     // Vérifier si le statut est valide pour refus (niveau DAF)
     if ($demande->status != 1) {
         return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
@@ -492,6 +499,8 @@ public function refuserDaf($id)
 
     // Mettre à jour le statut
     $demande->status = -2;
+     $demande->refuse_par = $user->prenom . ' ' . $user->nom;
+    $demande->motif_refus = $request->motif_refus; //  important
     $demande->date_validation_daf = now();
     $demande->save();
 
@@ -518,7 +527,10 @@ public function refuserDaf($id)
 }
 // Liste des demandes en attente Directeur
 public function enAttenteDirecteur()
-{
+{ $user = Auth::user();
+
+    // Récupérer toutes les permissions du rôle
+    $permissions = $user->role->permissions->pluck('nom');
     // Liste paginée des demandes en attente Directeur
     $demandes = Demande::with(['entite', 'user'])
         ->where('status', 2) // status 2 = en attente Directeur
@@ -526,11 +538,7 @@ public function enAttenteDirecteur()
         ->paginate(12);
 
     // Calculs pour le dashboard
-    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
-    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
-    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
+ 
 
     // Taux de traitement (exemple simple)
     $tauxTraitement = $totalDemandes > 0 
@@ -540,12 +548,7 @@ public function enAttenteDirecteur()
     // Retour de la vue avec dashboard
     return view('demandes.directeur', compact(
         'demandes',
-        'totalDemandes',
-        'totalEnAttenteControleur',
-        'totalEnAttenteDaf',
-        'totalEnAttenteDirecteur',
-        'totalValide',
-        'tauxTraitement'
+        'permissions',
     ));
 }
 
@@ -622,11 +625,13 @@ public function validerDirecteur($id)
 
 
 
-public function refuserDirecteur($id)
+public function refuserDirecteur(Request $request, $id)
 {
     $demande = Demande::with('user', 'entite')->findOrFail($id);
     $user = Auth::user();
-
+    $request->validate([
+        'motif_refus' => 'required|string|max:1000'
+    ]);
     // Vérifier si le statut est valide pour refus (niveau DG)
     if ($demande->status != 2) {
         return redirect()->back()->with('error', 'Cette demande ne peut plus être refusée.');
@@ -636,9 +641,11 @@ public function refuserDirecteur($id)
     if (!$this->verifierPermission($user, $demande, 3)) {
         abort(403, "Vous n'avez pas la permission de refuser cette demande.");
     }
-
+ 
     // Mettre à jour le statut
     $demande->status = -3;
+     $demande->refuse_par = $user->prenom . ' ' . $user->nom;
+    $demande->motif_refus = $request->motif_refus; //  important
     $demande->date_validation_dg = now();
     $demande->save();
 
@@ -672,32 +679,25 @@ public function refuserDirecteur($id)
 // Afficher les demandes validées par le DG
 public function valider()
 {
+        $user = Auth::user();
+ // Récupérer toutes les permissions du rôle
+    $permissions = $user->role->permissions->pluck('nom');
     // Récupère toutes les demandes validées (status = 3)
     $demandes = Demande::where('status', 3)
                         ->orderByDesc('created_at')
                         ->paginate(12);
 
     // Calculs pour le dashboard
-    $totalDemandes = Demande::whereIn('status', [0,1,2,3])->sum('montant_paiement_fournisseur');
-    $totalEnAttenteControleur = Demande::where('status', 0)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDaf = Demande::where('status', 1)->sum('montant_paiement_fournisseur');
-    $totalEnAttenteDirecteur = Demande::where('status', 2)->sum('montant_paiement_fournisseur');
-    $totalValide = Demande::where('status', 3)->sum('montant_paiement_fournisseur');
+   
 
     // Taux de traitement
-    $tauxTraitement = $totalDemandes > 0 
-        ? round(($totalValide / $totalDemandes) * 100, 2) 
-        : 0;
+
 
     // Retourne la vue avec le dashboard
     return view('demandes.valider', compact(
         'demandes',
-        'totalDemandes',
-        'totalEnAttenteControleur',
-        'totalEnAttenteDaf',
-        'totalEnAttenteDirecteur',
-        'totalValide',
-        'tauxTraitement'
+        'permissions'
+        
     ));
 }
 

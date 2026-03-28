@@ -16,8 +16,7 @@ return new class extends Migration
             $table->string('libelle_entite');
             $table->string('logo')->nullable(); // nouveau champ pour le logo
              // Flag pour "suppression" visible à l'utilisateur
-            $table->boolean('is_deleted')
-                  ->default(false);
+         
             
             $table->timestamps();
         });

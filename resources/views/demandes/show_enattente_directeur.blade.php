@@ -175,22 +175,36 @@
     </div>
 </div>
 
-    <!-- Action Buttons -->
-    <div class="flex space-x-4 mb-6">
-        <form action="{{ route('demandes.refuserDirecteur', $demande->id) }}" method="POST" class="flex-1">
+               <!-- Actions -->
+ <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+
+    <div class="flex gap-4">
+        
+        <!-- REFUSER -->
+        <div class="flex-1">
+            <form id="refusForm" action="{{ route('demandes.refuserDirecteur', $demande->id) }}" method="POST" class="hidden">
+                @csrf
+                <input type="hidden" name="motif_refus" id="motif_refus">
+            </form>
+
+            <button onclick="refuserDemande()" 
+                class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
+                Refuser
+            </button>
+        </div>
+
+          <!-- ACCEPTER -->
+         <form action="{{ route('demandes.validerDirecteur', $demande->id) }}" method="POST" class="flex-1">
             @csrf
-            <button type="submit" class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
-                Refuser 
+            <button type="submit" 
+                class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+                Accepter
             </button>
         </form>
 
-        <form action="{{ route('demandes.validerDirecteur', $demande->id) }}" method="POST" class="flex-1">
-            @csrf
-            <button type="submit" class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
-                Valider
-            </button>
-        </form>
     </div>
+
 
     <div class="mt-6">
         <a href="{{ route('demandes.enAttenteDirecteur') }}" 

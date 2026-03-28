@@ -174,33 +174,52 @@
     </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex space-x-4 mb-6">
-        <form action="{{ route('demandes.refuserDaf', $demande->id) }}" method="POST" class="flex-1">
-            @csrf
-            <button type="submit" class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
+           <!-- Actions -->
+ <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+
+    <div class="flex gap-4">
+        
+        <!-- REFUSER -->
+        <div class="flex-1">
+            <form id="refusForm" action="{{ route('demandes.refuserDaf', $demande->id) }}" method="POST" class="hidden">
+                @csrf
+                <input type="hidden" name="motif_refus" id="motif_refus">
+            </form>
+
+            <button onclick="refuserDemande()" 
+                class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
                 Refuser
             </button>
-        </form>
+        </div>
 
-        <form action="{{ route('demandes.validerDaf', $demande->id) }}" method="POST" class="flex-1">
+          <!-- ACCEPTER -->
+         <form action="{{ route('demandes.validerDaf', $demande->id) }}" method="POST" class="flex-1">
             @csrf
-            <button type="submit" class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
-                Valider
+            <button type="submit" 
+                class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+                Accepter
             </button>
         </form>
+
     </div>
 
-    <div class="mt-6">
+     <div class="mt-6">
         <a href="{{ route('demandes.enAttenteDaf') }}" 
            class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold">
              Retour à la liste
         </a>
-    </div>
+     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    // =========================
+    //  AFFICHAGE PDF MODAL
+    // =========================
     const viewBtns = document.querySelectorAll('.view-file-btn');
     const modal = document.getElementById('fileModal');
     const iframe = document.getElementById('fileFrame');
@@ -208,26 +227,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
     viewBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            const file = this.dataset.file;
-            iframe.src = file;
+            const fileUrl = this.getAttribute('data-file');
+
+            if (!fileUrl) return;
+
+            iframe.src = fileUrl;
             modal.classList.remove('hidden');
-            document.body.classList.add('overflow-hidden'); // Bloque le scroll arrière-plan
+            document.body.classList.add('overflow-hidden');
         });
     });
 
+    // Fermer modal
     closeBtn.addEventListener('click', closeModal);
+
     window.addEventListener('click', function(e) {
-        if(e.target === modal) {
-            closeModal();
-        }
+        if (e.target === modal) closeModal();
     });
 
     function closeModal() {
         modal.classList.add('hidden');
         iframe.src = '';
-        document.body.classList.remove('overflow-hidden'); // Débloque le scroll arrière-plan
+        document.body.classList.remove('overflow-hidden');
     }
+
 });
+
+// =========================
+// REFUS AVEC SWEETALERT
+// =========================
+function refuserDemande() {
+    Swal.fire({
+        title: 'Motif du refus',
+        input: 'textarea',
+        inputLabel: 'Veuillez saisir la raison du refus',
+        inputPlaceholder: 'Ex: Pièces justificatives manquantes...',
+        inputAttributes: {
+            'aria-label': 'Motif du refus'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Refuser',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('Le motif est obligatoire ❗');
+                return false;
+            }
+            return value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('motif_refus').value = result.value;
+            document.getElementById('refusForm').submit();
+        }
+    });
+}
 </script>
 
 @endsection

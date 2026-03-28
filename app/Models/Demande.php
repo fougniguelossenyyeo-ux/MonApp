@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\Historisable;
+use Illuminate\Auth\Access\AuthorizationException;
 class Demande extends Model
 {
     use HasFactory, Historisable;
@@ -42,6 +43,7 @@ class Demande extends Model
         'date_validation_dg',
         'description',
         'motif_refus',
+        'refuse_par',
         'is_deleted',
     ];
 
@@ -61,18 +63,30 @@ class Demande extends Model
             }
         });
 
-        // Protection ultime : bloquer toute tentative de suppression
-        static::deleting(function ($demande) {
-            throw new \Illuminate\Auth\Access\AuthorizationException(
-                "Une demande ne peut jamais être supprimée dans Kama. Utilisez l’annulation via le statut."
-            );
-        });
+        // Intercepter la suppression pour implémenter une suppression logique
+   static::deleting(function ($demande) {
+
+    $user = Auth::user();
+
+    if (!$user) {
+        throw new AuthorizationException("Utilisateur non authentifié.");
+    }
+
+    // Vérifier si le rôle de l'utilisateur est super admin
+    if ($user->role && $user->role->super_admin) {
+        return; // autorisé
+    }
+
+    throw new AuthorizationException(
+        "Vous n'êtes pas autorisé à supprimer cette demande."
+    );
+});
     }
 
     public function user()     { return $this->belongsTo(User::class); }
     public function entite()   { return $this->belongsTo(Entite::class); }
     public function paiement() { return $this->hasOne(Paiement::class); }
-    public function Paiementversements() {
+    public function PaiementVersements() {
         return $this->hasManyThrough(PaiementVersement::class, Paiement::class, 'demande_id', 'paiement_id');
     }
     public function historiqueActions() {

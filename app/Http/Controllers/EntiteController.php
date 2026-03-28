@@ -15,8 +15,7 @@ class EntiteController extends Controller
 
  public function indexe()
 {
-    // Récupérer uniquement les entités actives (non supprimées)
-    $entites = Entite::actif()->get();
+    $entites = Entite::orderBy('created_at', 'desc')->get();
     return view('entites.index', compact('entites'));
 }
 
@@ -43,12 +42,12 @@ class EntiteController extends Controller
     }
 
     // Création de l'entité
-    Entite::create([
+   Entite::create([
         'libelle_entite' => $request->libelle_entite,
         'logo' => $logoPath,
     ]);
   // Historiser
-   $entite->logAction('creer', ['valeurs' => $entite->toArray()]);
+
     return redirect()->route('entites.index')
                      ->with('success', 'Entité créée avec succès.');
 }
@@ -64,8 +63,8 @@ class EntiteController extends Controller
             'libelle_entite' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-  // Historiser les anciennes valeurs avant modification
-    $oldValues = $entite->getOriginal(); // Récupère les valeurs avant modification
+ 
+   // Récupère les valeurs avant modification
         if ($request->hasFile('logo')) {
             if ($entite->logo) {
                 Storage::disk('public')->delete($entite->logo);
@@ -76,20 +75,14 @@ class EntiteController extends Controller
         $entite->libelle_entite = $request->libelle_entite;
         $entite->save();
 // Historiser les modifications
-    $changes = $entite->getChanges(); // seulement les colonnes modifiées
-    $entite->logAction('modifier', [
-        'anciennes_valeurs' => $oldValues,
-        'modifications' => $changes,
-    ]);
+   
+    
         return redirect()->route('entites.index')->with('success', 'Entité mise à jour.');
     }
 // Soft delete de l'entité  // Historiser la suppression avant de marquer comme supprimé
 public function destroy(Entite $entite)
 {
-    // Historiser l'entité avant suppression
-    $entite->logAction('supprimer', [
-        'valeurs' => $entite->toArray(),
-    ]);
+  
 
     // Supprimer le logo
     if ($entite->logo) {

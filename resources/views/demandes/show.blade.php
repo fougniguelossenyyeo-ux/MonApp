@@ -13,31 +13,29 @@
                 <h2 class="text-2xl font-bold">{{ $demande->reference_dp }}</h2>
                 <p class="text-2xl font-bold">{{ $demande->denomination }}</p>
             </div>
-               <div class="mt-4 md:mt-0">
-            @php
-                $statusText = match($demande->status) {
-                    0  => "En attente de validation du Contrôleur",
-                    1  => "En attente de validation du DAF",
-                    2  => "En attente de validation du DG",
-                    3  => "Validé",
-                    -1 => "Refusé par le Contrôleur",
-                    -2 => "Refusé par le DAF",
-                    -3 => "Refusé par le DG",
-                    default => "Statut inconnu",
-                };
-
-                $badgeColor = match($demande->status) {
-                    0,1,2 => "bg-yellow-50 text-yellow-700",
-                    3 => "bg-green-50 text-green-700",
-                    -1,-2,-3 => "bg-red-50 text-red-700",
-                    default => "bg-gray-50 text-gray-700",
-                };
-            @endphp
-
-            <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded">
-                <b>{{ $statusText }}</b>
-            </span>
-        </div>
+           <div class="mt-4 md:mt-0">
+                @php
+                    $statusText = match($demande->status) {
+                        0 => "En attente de validation du Contrôleur",
+                        1 => "En attente de validation du DAF",
+                        2 => "En attente de validation du DG",
+                        3 => "Validé",
+                        -1 => "Refusé par le Contrôleur",
+                        -2 => "Refusé par le DAF",
+                        -3 => "Refusé par le DG",
+                        default => "Statut inconnu",
+                    };
+                    $badgeColor = match($demande->status) {
+                        0,1,2 => "bg-yellow-50 text-yellow-700",
+                        3 => "bg-green-50 text-green-700",
+                        -1,-2,-3 => "bg-red-50 text-red-700",
+                        default => "bg-gray-50 text-gray-700",
+                    };
+                @endphp
+                <span class="status-badge {{ $badgeColor }} text-xs px-2 py-1 rounded">
+                    <b>{{ $statusText }}</b>
+                </span>
+            </div>
         </div>
     </div>
 
@@ -152,6 +150,21 @@
     <p class="text-gray-500">Aucune pièce jointe pour cette demande.</p>
 @endif
     </div>
+    @if(in_array($demande->status, [-1, -2, -3]))
+<div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+    <h3 class="text-lg font-semibold text-red-700 mb-4">Motif du refus</h3>
+
+    <div class="space-y-3">
+
+        <div>
+          
+            <p class="font-medium text-red-700">
+                {{ $demande->motif_refus ?? 'Aucun motif fourni' }}
+            </p>
+        </div>
+    </div>
+</div>
+@endif
 </div>
 
 <!-- Modal PDF -->

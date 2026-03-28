@@ -27,7 +27,9 @@ class PaiementVersement extends Model
     'commentaire',
     'statut_versement',
     'is_deleted',
-    'motif_refus_versement',     
+    'motif_refus_versement',
+    'refuse_par',
+
 ];
 
     protected $casts = [
@@ -56,7 +58,7 @@ class PaiementVersement extends Model
      */
     public function paiement()
     {
-        return $this->belongsTo(Paiement::class, 'paiement_id');
+        return $this->belongsTo(Paiement::class, 'paiement_id', 'id');
     }
 
     /**

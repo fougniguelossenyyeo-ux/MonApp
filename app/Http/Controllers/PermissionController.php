@@ -115,7 +115,7 @@ class PermissionController extends Controller
                 ->log("Modification des permissions du rôle {$role->libelle}");
         }
 
-        // 8️⃣ Redirection avec rôle toujours sélectionné
+        // 8️ Redirection avec rôle toujours sélectionné
         return redirect()
             ->route('permissions.index', ['role_id' => $role->id])
             ->with('success', "Les permissions du rôle « {$role->libelle} » ont été mises à jour avec succès.");

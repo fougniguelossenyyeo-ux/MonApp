@@ -75,10 +75,22 @@
 @endif
 
             <!-- Faire un paiement -->
-            <a href="{{ route('paiements.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('paiements.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
-                <i class="fas fa-money-bill-wave mr-3"></i>
-                <span id="paymentText">Faire un paiement</span>
-            </a>
+           @php
+    $canInitPaiement = auth()->user()->role &&
+        auth()->user()->role->permissions->contains(function ($perm) {
+            return str_starts_with($perm->nom, 'initier_paiement_');
+        });
+@endphp
+
+@if($canInitPaiement)
+    <a href="{{ route('paiements.index') }}" 
+       class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg 
+       {{ request()->routeIs('paiements.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
+        
+        <i class="fas fa-money-bill-wave mr-3"></i>
+        <span id="paymentText">Faire un paiement</span>
+    </a>
+@endif
 
             <!-- Demandes -->
             <a href="{{ route('demandes.index') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('demandes.index') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
@@ -93,11 +105,18 @@
             </a>
 
             <!-- Administration -->
-            <a href="{{ route('users.list') }}" class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('users.list') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
-                <i class="fas fa-cog mr-3"></i>
-                <span id="adminText">Administration</span>
-            </a>
-
+    @auth
+    @if(auth()->user()->email === 'superadmin@kama.ci')
+        <!-- Administration -->
+        <a href="{{ route('users.list') }}" 
+           class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg 
+           {{ request()->routeIs('users.list') ? 'active' : 'text-gray-700 hover:bg-gray-100' }}">
+            
+            <i class="fas fa-cog mr-3"></i>
+            <span id="adminText">Administration</span>
+        </a>
+    @endif
+@endauth
         </div>
 
         <!-- Profil utilisateur et logout -->

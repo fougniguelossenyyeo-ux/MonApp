@@ -6,12 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Historisable;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Paiement extends Model
 {
     use HasFactory, Historisable;
- 
 
     protected $table = 'paiements';
 
@@ -28,14 +26,14 @@ class Paiement extends Model
         'reference_paiement',
         'date_paiement_effectif',
         'commentaire',
+        
     ];
 
     protected $casts = [
         'montant_prevu'          => 'decimal:2',
         'montant_paye'           => 'decimal:2',
-        'montant_restant'        => 'decimal:2',
         'date_paiement_effectif' => 'date',
-         'is_deleted'      => 'boolean',
+       
     ];
 
     protected static function booted()
@@ -47,13 +45,11 @@ class Paiement extends Model
         });
     }
 
-    // ────────────────────────────────────────────────
-    // Relations uniquement (aucune logique métier ici)
-    // ────────────────────────────────────────────────
+    // ───── Relations ─────
 
     public function demande()
     {
-        return $this->belongsTo(Demande::class, 'demande_id','id');
+        return $this->belongsTo(Demande::class, 'demande_id', 'id');
     }
 
     public function user()
@@ -71,35 +67,36 @@ class Paiement extends Model
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
 
+    // ───── Méthodes métier ─────
 
-/**
- * Montant déjà payé = somme des versements validés
- */
-public function montantDejaPaye()
-{
-    return $this->paiementVersements
-        ->where('statut_versement', 'valide')
-        ->sum('montant');
-}
-
-/**
- * Montant restant à payer
- */
-public function montantRestant()
-{
-    return $this->montant_prevu - $this->montantDejaPaye();
-}
- /**
-     * Marquer le paiement comme supprimé (soft delete)
+    /**
+     * Montant déjà payé (versements validés)
      */
-    public function markAsDeleted(): void
+    public function montantDejaPaye(): float
     {
-        $this->is_deleted = true;
-        $this->save();
+        return (float) $this->paiementVersements()
+            ->where('statut_versement', 'valide')
+            ->sum('montant');
     }
-public function scopeActifs($query)
-{
-    return $query->where('is_deleted', false);
-}
 
+    /**
+     * Montant restant à payer
+     */
+    public function montantRestant(): float
+    {
+        return (float) $this->montant_prevu - $this->montantDejaPaye();
+    }
+
+    /**
+     * Accessor (optionnel mais pratique)
+     */
+    public function getMontantRestantAttribute(): float
+    {
+        return $this->montantRestant();
+    }
+
+  
+    
+
+   
 }

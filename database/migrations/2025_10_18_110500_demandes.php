@@ -39,13 +39,13 @@ return new class extends Migration
             $table->string('centre_analytique')->nullable();
             $table->string('code_projet')->nullable();
              $table->text('description')->nullable(); 
-
+             
             // Pièces jointes
             $table->text('pieces_jointes')->nullable();
 
             // Statut général de la demande
             $table->tinyInteger('status')->default(0); // 0=Créé, 1=Contrôleur validé, 2=DAF validé, 3=DG validé
-
+                $table->text('refuse_par')->nullable(); // Nouveau champ pour stocker qui a refusé la demande
             // Dates de validation
             $table->timestamp('date_validation_controleur')->nullable();
             $table->timestamp('date_validation_daf')->nullable();

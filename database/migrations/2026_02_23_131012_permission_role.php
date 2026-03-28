@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('permission_role', function (Blueprint $table) {
             $table->uuid('role_id');                   // Clé étrangère vers roles
             $table->uuid('permission_id');  
-             $table->boolean('is_deleted')->default(false); // Pour audit           // Clé étrangère vers permissions
+    
             $table->timestamps();
 
             // Définition des clés étrangères

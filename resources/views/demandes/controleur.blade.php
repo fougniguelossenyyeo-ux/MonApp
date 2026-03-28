@@ -1,13 +1,6 @@
 @extends('layouts.template')
 @section('maincontent')
-@include('layouts.demande', [
-    'totalDemandes' => $totalDemandes,
-    'totalEnAttenteControleur' => $totalEnAttenteControleur,
-    'totalEnAttenteDaf' => $totalEnAttenteDaf,
-    'totalEnAttenteDirecteur' => $totalEnAttenteDirecteur,
-    'totalValide' => $totalValide,
-    
-])
+@include('layouts.demande')
 
 <!-- Contenu principal -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

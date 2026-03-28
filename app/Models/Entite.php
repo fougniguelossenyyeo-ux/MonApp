@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Traits\Historisable;
+
 class Entite extends Model
 {
     use HasFactory, Historisable;
@@ -19,33 +20,39 @@ class Entite extends Model
     protected $fillable = [
         'libelle_entite',
         'logo',
-        'is_deleted',
-    ];
- protected $casts = [
         
-         'is_deleted'      => 'boolean',
-       
     ];
+
+   
+
     protected static function booted()
     {
-        // Génération d'UUID ordonné
+        // Génération UUID
         static::creating(function ($entite) {
             if (empty($entite->id)) {
                 $entite->id = (string) Str::orderedUuid();
             }
         });
 
-        // Supprimer logo et permissions avant suppression
+        // Suppression sécurisée
         static::deleting(function ($entite) {
-            // Supprimer logo
+
+            $user = auth()->user();
+
+            if (!$user || !$user->role?->super_admin) {
+                throw new \Illuminate\Auth\Access\AuthorizationException(
+                    "Une entité ne peut pas être supprimée. Utilisez la désactivation."
+                );
+            }
+
+            // Nettoyage des fichiers
             if ($entite->logo) {
                 Storage::disk('public')->delete('logos/' . $entite->logo);
             }
 
-            // Supprimer toutes les permissions liées
+            // Suppression des permissions liées
             $entite->permissions()->delete();
         });
-        
     }
 
     // ───── Relations ─────
@@ -65,31 +72,25 @@ class Entite extends Model
         return $this->hasMany(Permission::class, 'entite_id', 'id');
     }
 
-    // ───── Accesseurs ─────
-
-  public function getLogoUrlAttribute(): ?string
-{
-    if (!$this->logo) {
-        return null;
-    }
-
-    // S'assurer qu'il n'y a pas de double "logos/"
-    $logoPath = preg_replace('#^logos/#', '', $this->logo);
-
-    return asset('storage/logos/' . $logoPath);
-}
-public function markAsDeleted()
-{
-    $this->is_deleted = true;
-    $this->save();
-}
-public function scopeActif($query)
-{
-    return $query->where('is_deleted', false);
-}
-   // Relation morphMany pour HistoriqueActions via le trait
     public function historiqueActions()
     {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
+
+    // ───── Accesseurs ─────
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo) {
+            return null;
+        }
+
+        $logoPath = preg_replace('#^logos/#', '', $this->logo);
+
+        return asset('storage/logos/' . $logoPath);
+    }
+
+    // ───── Méthodes métier ─────
+
+   
 }

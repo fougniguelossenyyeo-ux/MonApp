@@ -105,7 +105,6 @@ class AuthController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'poste' => 'nullable|string|max:255',
-            'fonction' => 'nullable|string|max:255',
             'role_id' => 'required|string|exists:roles,id',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
@@ -114,7 +113,7 @@ class AuthController extends Controller
         $user->prenom = $validated['prenom'];
         $user->email = $validated['email'];
         $user->poste = $validated['poste'] ?? null;
-        $user->fonction = $validated['fonction'] ?? null;
+
         $user->role_id = $validated['role_id'];
 
         if (!empty($validated['password'])) {

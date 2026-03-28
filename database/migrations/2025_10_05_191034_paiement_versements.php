@@ -22,6 +22,7 @@ return new class extends Migration
                $table->string('mode_paiement')->nullable(); // Mode de paiement (ex: carte, virement, etc.)
             $table->string('motif_refus_versement')->nullable(); // Motif du refus du versement
             $table->boolean('is_deleted')->default(false);
+               $table->text('refuse_par')->nullable(); // Nouveau champ pour stocker qui a refusé le versement
             $table->timestamps();
         });
     }

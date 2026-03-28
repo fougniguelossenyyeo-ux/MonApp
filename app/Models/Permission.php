@@ -46,7 +46,7 @@ protected $casts = [
      */
     public function entite()
     {
-        return $this->belongsTo(Entite::class, 'entite_id');
+        return $this->belongsTo(Entite::class, 'entite_id', 'id');
     }
 
     /**
@@ -66,12 +66,12 @@ protected $casts = [
         $this->is_deleted = true;
         $this->save();
     }
-        public function scopeActifs($query)
-{
+public function scopeActifs($query)
+  {
     return $query->where('is_deleted', false);
-}
+  }
 public function historiqueActions()
-{
+  {
     return $this->morphMany(HistoriqueAction::class, 'subject');
-}
+  }
 }

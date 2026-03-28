@@ -1,15 +1,7 @@
 @extends('layouts.template')
 @section('maincontent')
 
-@include('layouts.demande', [
-    'totalDemandes' => $totalDemandes,
-    'totalEnAttenteControleur' => $totalEnAttenteControleur,
-    'totalEnAttenteDaf' => $totalEnAttenteDaf,
-    'totalEnAttenteDirecteur' => $totalEnAttenteDirecteur,
-    'totalValide' => $totalValide,
-    'tauxTraitement' => $tauxTraitement,
-])
-
+@include('layouts.demande')
 <!-- Contenu principal -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- En-tête de page -->
@@ -26,60 +18,6 @@
         </div>
     </div>
 
-    <!-- Filtres -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <!-- Recherche -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Recherche</label>
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        placeholder="Référence, entité..." 
-                        class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    >
-                    <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400 text-xs"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Date début -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Date début</label>
-                <input type="date" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-
-            <!-- Date fin -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Date fin</label>
-                <input type="date" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-
-            <!-- Entité -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Entité</label>
-                <select class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                    <option value="">Toutes</option>
-                    <option value="GAZ">GAZ</option>
-                    <option value="KTLS">KTLS</option>
-                    <option value="KAMACI">KAMACI</option>
-                </select>
-            </div>
-
-            <!-- Montant -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Montant</label>
-                <select class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                    <option value="">Tous</option>
-                    <option value="0-1000000">&lt; 1M</option>
-                    <option value="1000000-5000000">1M - 5M</option>
-                    <option value="5000000-10000000">5M - 10M</option>
-                    <option value="10000000+">&gt; 10M</option>
-                </select>
-            </div>
-        </div>
-    </div>
 
     <!-- Grille des cartes -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
@@ -177,11 +115,18 @@
     </div>
 
     <!-- Lien détails -->
-    <div class="flex items-center">
-        <a href="{{ route('demandes.showEnAttenteDirecteur', $demande->id) }}" 
-           class="view-details-btn text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-            Voir détails
-        </a>
+    <div class="flex space-x-2">
+          @if($permissions->contains('valider_demande_niveau3_' . Str::slug($demande->entite->libelle_entite, '_')))
+    <a href="{{ route('demandes.showEnAttenteDirecteur', $demande->id) }}"
+       class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+        Voir détails
+    </a>
+@else
+    <button onclick="showPermissionError()"
+        class="text-red-600 hover:text-red-800 text-xs font-medium">
+        Voir détails
+    </button>
+@endif
     </div>
 
 </div>

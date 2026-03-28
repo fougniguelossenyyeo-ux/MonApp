@@ -152,26 +152,6 @@
 @endif
     </div>
 
-    <!-- Actions -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-        <div class="flex space-x-4">
-            <form action="{{ route('demandes.refuserControleur', $demande->id) }}" method="POST" class="flex-1">
-                @csrf
-                <button type="submit" class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">Refuser</button>
-            </form>
-            <form action="{{ route('demandes.validerControleur', $demande->id) }}" method="POST" class="flex-1">
-                @csrf
-                <button type="submit" class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">Accepter</button>
-            </form>
-        </div>
-        <div class="mt-6">
-            <a href="{{ route('demandes.enAttenteControl') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold">
-                Retour à la liste
-            </a>
-        </div>
-    </div>
-
     <!-- Modal PDF -->
     <div id="fileModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999] p-4">
         <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto relative">
@@ -179,11 +159,55 @@
             <iframe id="fileFrame" src="" class="w-full h-[80vh] rounded-lg border border-gray-200 shadow-inner"></iframe>
         </div>
     </div>
+       <!-- Actions -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+
+    <div class="flex gap-4">
+        
+        <!-- REFUSER -->
+        <div class="flex-1">
+            <form id="refusForm" action="{{ route('demandes.refuserControleur', $demande->id) }}" method="POST" class="hidden">
+                @csrf
+                <input type="hidden" name="motif_refus" id="motif_refus">
+            </form>
+
+            <button onclick="refuserDemande()" 
+                class="w-full py-3 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">
+                Refuser
+            </button>
+        </div>
+
+        <!-- ACCEPTER -->
+        <form action="{{ route('demandes.validerControleur', $demande->id) }}" method="POST" class="flex-1">
+            @csrf
+            <button type="submit" 
+                class="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+                Accepter
+            </button>
+        </form>
+
+    </div>
+
+    <!-- RETOUR -->
+    <div class="mt-6">
+        <a href="{{ route('demandes.enAttenteControl') }}" 
+           class="px-6 py-3 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold inline-block">
+            Retour à la liste
+        </a>
+    </div>
+</div>
 
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    // =========================
+    //  AFFICHAGE PDF MODAL
+    // =========================
     const viewBtns = document.querySelectorAll('.view-file-btn');
     const modal = document.getElementById('fileModal');
     const iframe = document.getElementById('fileFrame');
@@ -191,20 +215,60 @@ document.addEventListener('DOMContentLoaded', function() {
 
     viewBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            iframe.src = this.dataset.file;
+            const fileUrl = this.getAttribute('data-file');
+
+            if (!fileUrl) return;
+
+            iframe.src = fileUrl;
             modal.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
         });
     });
 
+    // Fermer modal
     closeBtn.addEventListener('click', closeModal);
-    window.addEventListener('click', e => { if(e.target === modal) closeModal(); });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
 
     function closeModal() {
         modal.classList.add('hidden');
         iframe.src = '';
         document.body.classList.remove('overflow-hidden');
     }
+
 });
+
+// =========================
+// REFUS AVEC SWEETALERT
+// =========================
+function refuserDemande() {
+    Swal.fire({
+        title: 'Motif du refus',
+        input: 'textarea',
+        inputLabel: 'Veuillez saisir la raison du refus',
+        inputPlaceholder: 'Ex: Pièces justificatives manquantes...',
+        inputAttributes: {
+            'aria-label': 'Motif du refus'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Refuser',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('Le motif est obligatoire ❗');
+                return false;
+            }
+            return value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('motif_refus').value = result.value;
+            document.getElementById('refusForm').submit();
+        }
+    });
+}
 </script>
 @endsection

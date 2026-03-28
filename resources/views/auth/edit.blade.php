@@ -61,18 +61,7 @@
                                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fonction</label>
-                        <select name="fonction" required class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
-                            <option value="">Sélectionnez la fonction</option>
-                            <option value="administrateur" {{ $user->fonction == 'administrateur' ? 'selected' : '' }}>Administrateur</option>
-                            <option value="daf" {{ $user->fonction == 'daf' ? 'selected' : '' }}>DAF</option>
-                            <option value="controleur" {{ $user->fonction == 'controleur' ? 'selected' : '' }}>Contrôleur</option>
-                            <option value="dg" {{ $user->fonction == 'dg' ? 'selected' : '' }}>DG</option>
-                            <option value="caissier" {{ $user->fonction == 'caissier' ? 'selected' : '' }}>Caissier(e)</option>
-                            <option value="tresorerie" {{ $user->fonction == 'tresorerie' ? 'selected' : '' }}>Trésorerie</option>
-                        </select>
-                    </div>
+                   
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Service</label>

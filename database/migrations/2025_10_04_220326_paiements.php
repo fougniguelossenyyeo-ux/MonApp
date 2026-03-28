@@ -50,8 +50,7 @@ return new class extends Migration
                   ->comment('Date du dernier versement ou date de paiement complet');
 
             $table->text('commentaire')->nullable();
-              $table->boolean('is_deleted')
-                  ->default(false);
+          
             
 
             $table->timestamps();
