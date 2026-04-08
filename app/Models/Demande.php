@@ -85,7 +85,7 @@ class Demande extends Model
 
     public function user()     { return $this->belongsTo(User::class); }
     public function entite()   { return $this->belongsTo(Entite::class); }
-    public function paiement() { return $this->hasOne(Paiement::class, 'd', 'id'); }
+    public function paiement() { return $this->hasOne(Paiement::class, 'demande_id', 'id'); }
     public function PaiementVersements() {
         return $this->hasManyThrough(PaiementVersement::class, Paiement::class, 'demande_id', 'paiement_id');
     }

@@ -99,14 +99,29 @@ private function verifierExistenceValidateurNiveauSuivant($demande, $niveauSuiva
      */
 public function index()
 {
-    // Récupérer toutes les demandes, peu importe le statut
+    $user = Auth::user();
+
+    // Permissions utilisateur
+    $permissions = $user->role->permissions->pluck('nom');
+
+    // Extraire les entités autorisées pour l'historique
+    $entitesAutorisees = $permissions
+        ->filter(fn($p) => str_starts_with($p, 'voir_historique_demande_'))
+        ->map(fn($p) => str_replace('voir_historique_demande_', '', $p));
+
+    // Filtrer les demandes selon les entités autorisées
     $demandes = Demande::with(['entite', 'user'])
+        ->whereHas('entite', function ($query) use ($entitesAutorisees) {
+            $query->whereIn(
+                \DB::raw('LOWER(REPLACE(libelle_entite, " ", "_"))'),
+                $entitesAutorisees
+            );
+        })
         ->orderBy('created_at', 'desc')
-        ->paginate(12); // Pagination
+        ->paginate(12);
 
-    return view('demandes.index', compact('demandes'));
+    return view('demandes.index', compact('demandes','permissions'));
 }
-
 
     /**
      * Formulaire de création
@@ -168,17 +183,14 @@ public function store(Request $request)
         $entite = Entite::findOrFail($validated['entite_id']);
         $slugEntite = Str::slug($entite->libelle_entite, '_');
         $permissionName = 'valider_demande_niveau1_' . $slugEntite;
-
+     
         //  Récupération des validateurs
-        $validateurs = User::with(['role.permissions'])
-            ->whereHas('role', function ($query) use ($entite) {
-                $query->where('entite_id', $entite->id);
-            })
-            ->whereHas('role.permissions', function($query) use ($permissionName) {
+      $validateurs = User::with(['role.permissions'])
+                 ->whereHas('role.permissions', function($query) use ($permissionName) {
                 $query->where('nom', $permissionName);
-            })
-            ->get();
-
+                })
+              ->get();
+          
         if ($validateurs->isEmpty()) {
             return redirect()->back()
                 ->withInput()
@@ -263,24 +275,23 @@ public function show(Demande $demande)
    
 public function enattenteControl()
 {
-     $user = Auth::user();
+    $user = Auth::user();
 
-    // Récupérer toutes les permissions du rôle
     $permissions = $user->role->permissions->pluck('nom');
+
+    $entitesAutorisees = $permissions
+        ->filter(fn($p) => str_starts_with($p, 'voir_demande_valider1_'))
+        ->map(fn($p) => str_replace('voir_demande_valider1_', '', $p));
 
     $demandes = Demande::with(['entite','user'])
         ->where('status', 0)
+        ->whereHas('entite', function ($query) use ($entitesAutorisees) {
+            $query->whereIn(\DB::raw('LOWER(REPLACE(libelle_entite, " ", "_"))'), $entitesAutorisees);
+        })
         ->orderBy('created_at','desc')
         ->paginate(12);
 
-    // Calculs pour le dashboard
-  
-
-    return view('demandes.controleur', compact(
-        'demandes',
-        'permissions'
-       
-    ));
+    return view('demandes.controleur', compact('demandes','permissions'));
 }
 
 public function showEnAttenteControl($id)
@@ -407,25 +418,31 @@ public function refuserControleur(Request $request, $id)
 }
 // DemandeController.php
 
-public function enAttenteDaf()
+public function enAttenteDaf() 
 {
-     $user = Auth::user();
+    $user = Auth::user();
 
-    // Récupérer toutes les permissions du rôle
+    // Récupérer toutes les permissions
     $permissions = $user->role->permissions->pluck('nom');
-    // Liste paginée des demandes en attente DAF
+
+    // Extraire les entités autorisées pour niveau 2 (DAF)
+    $entitesAutorisees = $permissions
+        ->filter(fn($p) => str_starts_with($p, 'voir_demande_valider2_'))
+        ->map(fn($p) => str_replace('voir_demande_valider2_', '', $p));
+
+    // Récupérer les demandes filtrées
     $demandes = Demande::with(['entite', 'user'])
-        ->where('status', 1) // status 1 = en attente DAF
+        ->where('status', 1) // en attente DAF
+        ->whereHas('entite', function ($query) use ($entitesAutorisees) {
+            $query->whereIn(
+                \DB::raw('LOWER(REPLACE(libelle_entite, " ", "_"))'),
+                $entitesAutorisees
+            );
+        })
         ->orderByDesc('created_at')
         ->paginate(12);
 
-
-  
-    // Vue LISTE avec dashboard
-    return view('demandes.daf', compact(
-        'demandes',
-          'permissions'
-    ));
+    return view('demandes.daf', compact('demandes','permissions'));
 }
 
 
@@ -571,26 +588,31 @@ public function refuserDaf(Request $request,$id)
 }
 // Liste des demandes en attente Directeur
 public function enAttenteDirecteur()
-{ $user = Auth::user();
+{
+    $user = Auth::user();
 
-    // Récupérer toutes les permissions du rôle
+    // Récupérer les permissions
     $permissions = $user->role->permissions->pluck('nom');
-    // Liste paginée des demandes en attente Directeur
+
+    // Extraire les entités autorisées pour niveau 3 (DG)
+    $entitesAutorisees = $permissions
+        ->filter(fn($p) => str_starts_with($p, 'voir_demande_valider3_'))
+        ->map(fn($p) => str_replace('voir_demande_valider3_', '', $p));
+
+    // Récupérer les demandes filtrées
     $demandes = Demande::with(['entite', 'user'])
-        ->where('status', 2) // status 2 = en attente Directeur
+        ->where('status', 2) // en attente DG
+        ->whereHas('entite', function ($query) use ($entitesAutorisees) {
+            $query->whereIn(
+                \DB::raw('LOWER(REPLACE(libelle_entite, " ", "_"))'),
+                $entitesAutorisees
+            );
+        })
         ->orderByDesc('created_at')
         ->paginate(12);
 
-    // Calculs pour le dashboard
- 
-
-    // Retour de la vue avec dashboard
-    return view('demandes.directeur', compact(
-        'demandes',
-        'permissions',
-    ));
+    return view('demandes.directeur', compact('demandes','permissions'));
 }
-
 
 // Détail d'une demande en attente Directeur
 public function showEnAttenteDirecteur($id)

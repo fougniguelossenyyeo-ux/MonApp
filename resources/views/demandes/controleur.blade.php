@@ -18,60 +18,7 @@
         </div>
     </div>
 
-    <!-- Filtres (statiques, non liés à la base) -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <!-- Recherche -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Recherche</label>
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        placeholder="Référence, entité..." 
-                        class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    >
-                    <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400 text-xs"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Date début -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Date début</label>
-                <input type="date" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-
-            <!-- Date fin -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Date fin</label>
-                <input type="date" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-
-            <!-- Entité -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Entité</label>
-                <select class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                    <option value="">Toutes</option>
-                    <option value="GAZ">GAZ</option>
-                    <option value="KTLS">KTLS</option>
-                    <option value="KAMACI">KAMACI</option>
-                </select>
-            </div>
-
-            <!-- Montant -->
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Montant</label>
-                <select class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                    <option value="">Tous</option>
-                    <option value="0-1000000">&lt; 1M</option>
-                    <option value="1000000-5000000">1M - 5M</option>
-                    <option value="5000000-10000000">5M - 10M</option>
-                    <option value="10000000+">&gt; 10M</option>
-                </select>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Grille des cartes dynamiques -->
 <!-- Grille des cartes dynamiques -->
