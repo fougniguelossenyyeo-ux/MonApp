@@ -74,7 +74,7 @@
 
             <!-- Lien de validation -->
             <div class="mb-6 text-center">
-                 <a href="{{ route('paiements.dg_valider', $paiement->id) }}" class="btn" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
+                 <a href="{{ route('paiements.shown', $paiement->id) }}" class="btn" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">
                      Valider ou Refuser le paiement
                  </a>
             </div>

@@ -1,139 +1,138 @@
-@extends('layouts.template')  
-
+@extends('layouts.template')
 @section('maincontent')
 
-@include('layouts.paiement', [
-    'totalEmis' => $totalEmis,
-    'totalEncours' => $totalEncours,
-    'totalPartiels' => $totalPartiels,
-    'totalValide' => $totalValide,
-])
+@include('layouts.paiement')
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- En-tête -->
+    {{-- HEADER --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-            <p class="text-gray-600 mt-1">Paiements non totalement terminés</p>
+            <p class="text-gray-600 mt-1">Historique complet des paiements émis</p>
         </div>
-        <div class="text-sm text-gray-600 mt-4 md:mt-0">
-            {{ $paiements->total() }} paiements
+
+        <div class="text-sm text-gray-600">
+            <span>{{ $paiements->total() }}</span> paiements
         </div>
     </div>
 
-    <!-- Cartes -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-2">
+  
+
+    {{-- GRID --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
         @forelse($paiements as $p)
 
             @php
-                $badgeColor = match($p->statut) {
+                $statut = $p->statut;
+
+                $badgeColor = match($statut) {
                     'en_attente' => "bg-yellow-50 text-yellow-800",
                     'partiel'    => "bg-orange-50 text-orange-800",
+                    'termine'    => "bg-green-50 text-green-800",
                     default      => "bg-gray-100 text-gray-700",
                 };
 
-                $statusText = match($p->statut) {
+                $statusText = match($statut) {
                     'en_attente' => "En attente",
-                    'partiel'    => "Partiellement payé",
+                    'partiel'    => "Partiel",
+                    'termine'    => "Terminé",
                     default      => "Inconnu",
                 };
 
-                $nombreVersements = $p->paiementVersements->count();
+                $total = (float) $p->montant_prevu;
+                $deja  = (float) $p->montantDejaPaye();
+                $rest  = (float) $p->montantRestant();
             @endphp
 
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col hover:border-gray-300 transition-colors">
+            <div class="bg-white rounded-xl border overflow-hidden flex flex-col hover:border-gray-300">
 
-                {{-- En-tête --}}
+                {{-- HEADER --}}
                 <div class="px-4 pt-4 pb-3">
-                    <div class="flex justify-between items-start gap-2">
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate">
-                                {{ $p->demande->reference_dp }}
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-sm font-semibold">
+                                {{ $p->demande->reference_dp ?? 'N/A' }}
                             </p>
-                            <p class="text-sm font-medium text-gray-800 mt-1 truncate">
-                                {{ $p->demande->nom_fournisseur }}
+
+            {{--  ENTITÉ AJOUTÉE --}}
+            <p class="text-xs text-indigo-600 font-medium mt-0.5">
+                {{ $p->demande->entite->libelle_entite ?? 'Entité inconnue' }}
+            </p>
+                            <p class="text-xs text-gray-500">
+                                {{ $p->demande->nom_fournisseur ?? 'N/A' }}
                             </p>
                         </div>
-                        <span class="{{ $badgeColor }} text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
+
+                        <span class="{{ $badgeColor }} text-xs px-2 py-1 rounded-md">
                             {{ $statusText }}
                         </span>
                     </div>
-
-                    {{-- Indicateur dynamique --}}
-                    @if($p->statut == 'en_attente')
-                        <div class="flex items-center gap-1.5 mt-3 text-xs text-yellow-700 bg-yellow-50 border border-yellow-100 rounded-md px-2.5 py-1.5 w-fit">
-                            ⏳ Paiement en attente de validation
-                        </div>
-                    @elseif($p->statut == 'partiel')
-                        <div class="flex items-center gap-1.5 mt-3 text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-md px-2.5 py-1.5 w-fit">
-                            💸 Paiement partiellement effectué
-                        </div>
-                    @endif
                 </div>
 
-                <hr class="border-gray-100">
+                <hr>
 
-                {{-- Montants --}}
-                <div class="px-4 py-3 flex-1">
+                {{-- MONTANTS --}}
+                <div class="px-4 py-3">
                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-gray-50 rounded-lg px-2.5 py-2">
-                            <p class="text-xs text-gray-500 mb-0.5">Total</p>
-                            <p class="text-xs font-semibold text-gray-900">
-                                {{ number_format($p->montant_a_payer, 0, ',', ' ') }} F
+
+                        <div class="bg-gray-50 p-2 rounded">
+                            <p class="text-xs text-gray-500">Total</p>
+                            <p class="text-xs font-semibold">{{ number_format($total, 0, ',', ' ') }}</p>
+                        </div>
+
+                        <div class="bg-gray-50 p-2 rounded">
+                            <p class="text-xs text-gray-500">Payé</p>
+                            <p class="text-xs font-semibold text-green-600">
+                                {{ number_format($deja, 0, ',', ' ') }}
                             </p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg px-2.5 py-2">
-                            <p class="text-xs text-gray-500 mb-0.5">Payé</p>
-                            <p class="text-xs font-semibold text-green-700">
-                                {{ number_format($p->montant_deja_paye, 0, ',', ' ') }} F
+
+                        <div class="bg-gray-50 p-2 rounded">
+                            <p class="text-xs text-gray-500">Restant</p>
+                            <p class="text-xs font-semibold text-orange-600">
+                                {{ number_format($rest, 0, ',', ' ') }}
                             </p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg px-2.5 py-2">
-                            <p class="text-xs text-gray-500 mb-0.5">Restant</p>
-                            <p class="text-xs font-semibold text-orange-700">
-                                {{ number_format($p->montant_restant, 0, ',', ' ') }} F
-                            </p>
-                        </div>
+
                     </div>
                 </div>
 
-                <hr class="border-gray-100">
+                <hr>
 
-                {{-- Pied --}}
-                <div class="px-4 py-3 bg-gray-50 flex items-center justify-between gap-3">
-                    <div class="flex gap-4 text-xs">
-                        <div>
-                            <p class="text-gray-500">Créé le</p>
-                            <p class="font-medium text-gray-800">
-                                {{ $p->created_at?->format('d/m/Y H:i') }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500">Versements</p>
-                            <p class="font-medium text-gray-800">{{ $nombreVersements }}</p>
-                        </div>
+                {{-- FOOTER --}}
+                <div class="px-4 py-3 bg-gray-50 flex justify-between text-xs">
+
+                    <div>
+                        <p class="text-gray-500">Créé</p>
+                        <p class="font-medium">{{ $p->created_at?->format('d/m/Y') }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-500">Versements</p>
+                        <p class="font-medium">{{ $p->paiementVersements->count() }}</p>
                     </div>
 
                     <a href="{{ route('paiements.show', $p->id) }}"
-                       class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">
+                       class="text-indigo-600 font-medium">
                         Voir
                     </a>
+
                 </div>
 
             </div>
 
         @empty
-            <div class="col-span-4 text-center py-12">
-                <p class="text-gray-500 font-medium">
-                    Aucun paiement en attente ou partiellement payé
-                </p>
+
+            <div class="col-span-full text-center text-gray-500 py-10">
+                Aucun paiement trouvé
             </div>
+
         @endforelse
 
     </div>
 
-    <!-- Pagination -->
+    {{-- PAGINATION --}}
     <div class="mt-6">
         {{ $paiements->links() }}
     </div>

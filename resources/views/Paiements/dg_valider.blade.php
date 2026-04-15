@@ -155,12 +155,16 @@
 
         @if($versementEnCours)
             <div class="flex flex-col sm:flex-row gap-4 mt-4">
- <form action="{{ route('paiements.refuserDG', $paiement->id) }}" method="POST" class="flex-1">
-                    @csrf
-                    <button type="submit" class="w-full py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">
-                        Refuser
-                    </button>
-                </form>
+ <form id="refusPaiementForm" action="{{ route('paiements.refuserDG', $paiement->id) }}" method="POST" class="flex-1">
+    @csrf
+    <input type="hidden" name="motif_refus_versement" id="motif_refus_versement">
+
+    <button type="button"
+        onclick="refuserPaiement()"
+        class="w-full py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">
+        Refuser
+    </button>
+</form>
 
               <form action="{{ route('paiements.validerDG', $paiement->id) }}" method="POST" class="flex-1">
                     @csrf
@@ -178,6 +182,34 @@
             Retour à la liste
         </a>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+function refuserPaiement() {
+
+    Swal.fire({
+        title: 'Motif du refus du versement',
+        input: 'textarea',
+        inputLabel: 'Veuillez saisir le motif du refus',
+        inputPlaceholder: 'Ex: Montant incorrect, pièce manquante...',
+        showCancelButton: true,
+        confirmButtonText: 'Refuser',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('Le motif est obligatoire ❗');
+                return false;
+            }
+            return value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('motif_refus_versement').value = result.value;
+            document.getElementById('refusPaiementForm').submit();
+        }
+    });
+}
+</script>
 </main>
 @endsection

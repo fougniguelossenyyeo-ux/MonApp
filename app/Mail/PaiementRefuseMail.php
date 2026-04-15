@@ -21,7 +21,7 @@ class PaiementRefuseMail extends Mailable
     public function build()
     {
         return $this->subject('Votre paiement a été refusé')
-                    ->view('emails.paiements.refuse')
+                    ->view('emails.versement_refuser')
                     ->with([
                         'paiement' => $this->paiement,
                         'demande' => $this->paiement->demande,

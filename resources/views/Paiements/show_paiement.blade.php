@@ -88,7 +88,49 @@
             </div>
         </div>
     </div>
+{{-- PIÈCES JOINTES (CORRIGÉ) --}}
+<div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
 
+    <h3 class="text-xl font-bold mb-6">Pièces jointes</h3>
+
+    @php
+        $pieces = $paiement->demande->pieces_jointes;
+
+        if (is_string($pieces)) {
+            $pieces = json_decode($pieces, true);
+        }
+    @endphp
+
+    @if(!empty($pieces) && is_array($pieces))
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            @foreach($pieces as $file)
+                <div class="flex items-center justify-between bg-gray-50 border rounded-xl p-4 hover:bg-gray-100">
+
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h8l4-4V5a2 2 0 00-2-2H4z"/>
+                        </svg>
+
+                        <span class="text-sm truncate">
+                            {{ basename($file) }}
+                        </span>
+                    </div>
+
+                      <button
+                        onclick="openPdfModal('{{ asset('storage/' . $file) }}')"
+                        class="text-blue-600 font-semibold text-sm">
+                          Voir
+                      </button>
+                </div>
+            @endforeach
+
+        </div>
+    @else
+        <p class="text-gray-500">Aucune pièce jointe</p>
+    @endif
+
+</div>
     {{-- Historique des versements --}}
     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8 hover:shadow-xl transition-shadow duration-300">
         <div class="flex items-center mb-6">
@@ -225,6 +267,44 @@
             <p class="text-lg font-semibold">Ce paiement n'existe pas.</p>
         </div>
     @endif
+<!-- MODAL PDF -->
+<div id="pdfModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 md:w-4/5 h-5/6 rounded-xl shadow-lg relative flex flex-col">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="font-bold text-lg">Aperçu du PDF</h3>
+            <button onclick="closePdfModal()" class="text-gray-500 hover:text-red-600 text-2xl">&times;</button>
+        </div>
+
+        <!-- PDF Viewer -->
+        <div class="flex-1">
+            <iframe id="pdfFrame" src="" class="w-full h-full rounded-b-xl"></iframe>
+        </div>
+
+    </div>
+</div>
 
 </main>
+
+<script>
+    function openPdfModal(url) {
+        document.getElementById('pdfFrame').src = url;
+        document.getElementById('pdfModal').classList.remove('hidden');
+        document.getElementById('pdfModal').classList.add('flex');
+    }
+
+    function closePdfModal() {
+        document.getElementById('pdfFrame').src = '';
+        document.getElementById('pdfModal').classList.add('hidden');
+        document.getElementById('pdfModal').classList.remove('flex');
+    }
+
+    // fermer avec ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") {
+            closePdfModal();
+        }
+    });
+</script>
 @endsection

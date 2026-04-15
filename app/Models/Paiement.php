@@ -90,11 +90,36 @@ class Paiement extends Model
     /**
      * Accessor (optionnel mais pratique)
      */
+   
+    public function getMontantDejaPayeAttribute(): float
+    {
+        return $this->montantDejaPaye();
+    }
+
     public function getMontantRestantAttribute(): float
     {
         return $this->montantRestant();
     }
 
+    public function getStatutLabelAttribute(): string
+    {
+        return match ($this->statut) {
+            'en_attente' => 'En attente',
+            'partiel'    => 'Partiel',
+            'termine'    => 'Terminé',
+            default      => 'Inconnu',
+        };
+    }
+
+    public function getStatutColorAttribute(): string
+    {
+        return match ($this->statut) {
+            'en_attente' => 'bg-yellow-50 text-yellow-800',
+            'partiel'    => 'bg-orange-50 text-orange-800',
+            'termine'    => 'bg-green-50 text-green-800',
+            default      => 'bg-gray-100 text-gray-700',
+        };
+    }
   
     
 

@@ -764,26 +764,29 @@ public function refuserDirecteur(Request $request, $id)
 // Afficher les demandes validées par le DG
 public function valider()
 {
-        $user = Auth::user();
- // Récupérer toutes les permissions du rôle
+    $user = Auth::user();
+
+    // Permissions utilisateur
     $permissions = $user->role->permissions->pluck('nom');
-    // Récupère toutes les demandes validées (status = 3)
-    $demandes = Demande::where('status', 3)
-                        ->orderByDesc('created_at')
-                        ->paginate(12);
 
-    // Calculs pour le dashboard
-   
+    // Extraire les entités autorisées pour les demandes validées
+    $entitesAutorisees = $permissions
+        ->filter(fn($p) => str_starts_with($p, 'voir_demande_valider123_'))
+        ->map(fn($p) => str_replace('voir_demande_valider123_', '', $p));
 
-    // Taux de traitement
+    // Filtrer les demandes validées selon les entités autorisées
+    $demandes = Demande::with(['entite', 'user'])
+        ->where('status', 3)
+        ->whereHas('entite', function ($query) use ($entitesAutorisees) {
+            $query->whereIn(
+                \DB::raw('LOWER(REPLACE(libelle_entite, " ", "_"))'),
+                $entitesAutorisees
+            );
+        })
+        ->orderByDesc('created_at')
+        ->paginate(12);
 
-
-    // Retourne la vue avec le dashboard
-    return view('demandes.valider', compact(
-        'demandes',
-        'permissions'
-        
-    ));
+    return view('demandes.valider', compact('demandes','permissions'));
 }
 
 public function showValider($id)

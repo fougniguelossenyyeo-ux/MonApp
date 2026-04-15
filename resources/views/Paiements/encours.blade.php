@@ -2,12 +2,7 @@
 
 @section('maincontent')
 
-@include('layouts.paiement', [
-    'totalEmis' => $totalEmis,
-    'totalEncours' => $totalEncours,
-    'totalPartiels' => $totalPartiels,
-    'totalValide' => $totalValide,
-])
+@include('layouts.paiement')
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -50,6 +45,9 @@
                     <div class="min-w-0">
                         <p class="text-sm font-semibold text-gray-900 truncate">
                             {{ $p->demande->reference_dp }}
+                        </p>
+                         <p class="text-xs text-indigo-600 font-medium mt-0.5">
+                              {{ $p->demande->entite->libelle_entite ?? 'Entité inconnue' }}
                         </p>
                         <p class="text-sm font-medium text-gray-800 mt-1 truncate">
                             {{ $p->demande->nom_fournisseur }}
