@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();                        // UUID unique
             $table->foreignUuid('entite_id')                      // Lien vers entites
-                  ->nullable()                                   // Permet de garder la permission si l'entité est "supprimée"
-                  ->constrained('entites')
-                  ->nullOnDelete();                              // On ne supprime pas, on met null
+                ->nullable()                                   // Permet de garder la permission si l'entité est "supprimée"
+                ->constrained('entites')
+                ->nullOnDelete();                              // On ne supprime pas, on met null
             $table->string('nom');                                // Nom de la permission
             $table->string('description')->nullable();           // Description
             $table->boolean('is_deleted')->default(false);       // Flag pour suppression logique

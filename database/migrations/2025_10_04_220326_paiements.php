@@ -13,30 +13,30 @@ return new class extends Migration
 
             // Lien unique vers la demande (1:1)
             $table->foreignUuid('demande_id')
-                  ->unique()                        // ← IMPORTANT : empêche plusieurs paiements par demande
-                  ->constrained('demandes')
-                  ->onDelete('restrict')            // empêche suppression demande si paiement existe
-                  ->comment('Une seule ligne paiement par demande');
+                ->unique()                        // ← IMPORTANT : empêche plusieurs paiements par demande
+                ->constrained('demandes')
+                ->onDelete('restrict')            // empêche suppression demande si paiement existe
+                ->comment('Une seule ligne paiement par demande');
 
             // Responsable du paiement
             $table->foreignUuid('user_id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->onDelete('set null')
-                  ->comment('Comptable / caissier qui gère ce paiement');
+                ->nullable()
+                ->constrained('users')
+                ->onDelete('set null')
+                ->comment('Comptable / caissier qui gère ce paiement');
 
             // Montants globaux du paiement
             $table->decimal('montant_prevu', 15, 2)
-                  ->comment('Montant total à payer = montant_paiement_fournisseur de la demande');
+                ->comment('Montant total à payer = montant_paiement_fournisseur de la demande');
 
             $table->decimal('montant_paye', 15, 2)
-                  ->default(0)
-                  ->comment('Cumul des versements effectués');
+                ->default(0)
+                ->comment('Cumul des versements effectués');
 
             // Statut global du paiement
             $table->enum('statut', [
                 'en_attente',       // paiement pas encore lancé
-                     // ordre de paiement créé
+                // ordre de paiement créé
                 'partiel',          // au moins un versement effectué
                 'termine',          // totalement payé
             ])->default('en_attente');
@@ -44,17 +44,15 @@ return new class extends Migration
             // Informations traçabilité (dernière opération ou globale)
 
             $table->string('reference_paiement', 120)->nullable()
-                  ->comment('Référence globale ou du dernier versement');
+                ->comment('Référence globale ou du dernier versement');
 
             $table->date('date_paiement_effectif')->nullable()
-                  ->comment('Date du dernier versement ou date de paiement complet');
+                ->comment('Date du dernier versement ou date de paiement complet');
 
             $table->text('commentaire')->nullable();
-          
-            
 
             $table->timestamps();
-           
+
             // Index
             $table->index('demande_id');
             $table->index('statut');

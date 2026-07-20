@@ -13,7 +13,9 @@ class DemandeRefuseeDG extends Mailable
     use Queueable, SerializesModels;
 
     public $demande;
+
     public $daf;
+
     public $controleur;
 
     /**
@@ -24,15 +26,15 @@ class DemandeRefuseeDG extends Mailable
         $this->demande = $demande;
 
         // Récupérer le DAF de l'entité
-        $this->daf = User::whereHas('role', function($q) use ($demande) {
+        $this->daf = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['daf']);
+                ->whereRaw('LOWER(libelle) = ?', ['daf']);
         })->first();
 
         // Récupérer le contrôleur de l'entité
-        $this->controleur = User::whereHas('role', function($q) use ($demande) {
+        $this->controleur = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['controleur']);
+                ->whereRaw('LOWER(libelle) = ?', ['controleur']);
         })->first();
     }
 
@@ -45,12 +47,12 @@ class DemandeRefuseeDG extends Mailable
         $recipientName = $this->demande->user->prenom ?? 'Utilisateur';
 
         return $this->subject("Demande refusée : {$this->demande->reference_dp} - {$this->demande->denomination} ({$entite})")
-                    ->view('emails.demande_refusee_dg')
-                    ->with([
-                        'demande' => $this->demande,
-                        'daf' => $this->daf,
-                        'controleur' => $this->controleur,
-                        'recipientName' => $recipientName,
-                    ]);
+            ->view('emails.demande_refusee_dg')
+            ->with([
+                'demande' => $this->demande,
+                'daf' => $this->daf,
+                'controleur' => $this->controleur,
+                'recipientName' => $recipientName,
+            ]);
     }
 }

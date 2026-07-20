@@ -7,12 +7,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-
-class NouvelleDemandeDP extends Mailable 
+class NouvelleDemandeDP extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $demande;
+
     public $validateur; // Utilisateur qui recevra le mail
 
     /**
@@ -32,10 +32,10 @@ class NouvelleDemandeDP extends Mailable
         $subject = "DPaie-{$this->demande->denomination}-{$this->demande->reference_dp}-{$this->demande->entite->libelle_entite}";
 
         return $this->view('emails.nouvelle_demande_dp')
-                    ->subject($subject)
-                    ->with([
-                        'demande' => $this->demande,
-                        'validateur' => $this->validateur, // ⚡ On le passe à la vue
-                    ]);
+            ->subject($subject)
+            ->with([
+                'demande' => $this->demande,
+                'validateur' => $this->validateur, // ⚡ On le passe à la vue
+            ]);
     }
 }

@@ -30,9 +30,9 @@ class DemandeRefusee extends Mailable
         $subject = "Demande refusée : {$this->demande->reference_dp} - {$this->demande->denomination} ({$entite})";
 
         return $this->subject($subject)
-                    ->view('emails.demande_refusee')
-                    ->with([
-                        'demande' => $this->demande,
-                    ]);
+            ->view('emails.demande_refusee')
+            ->with([
+                'demande' => $this->demande,
+            ]);
     }
 }

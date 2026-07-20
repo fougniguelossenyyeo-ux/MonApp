@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class HistoriqueAction extends Model
 {
@@ -13,6 +13,7 @@ class HistoriqueAction extends Model
     protected $table = 'historique_actions';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     // Pas de updated_at / deleted_at
@@ -85,7 +86,7 @@ class HistoriqueAction extends Model
      */
     private function resolveReference(): ?string
     {
-        if (!$this->subject) {
+        if (! $this->subject) {
             return null;
         }
 
@@ -104,22 +105,22 @@ class HistoriqueAction extends Model
         return match ($this->action) {
 
             // ───────── DEMANDE ─────────
-            'soumettre_demande'   => "Soumission d'une demande",
-            'valider_niveau1'     => "Validation niveau 1 de la demande",
-            'valider_niveau2'     => "Validation niveau 2 de la demande",
-            'valider_niveau3'     => "Validation niveau 3 de la demande",
-            'refuser_niveau1'     => "Refus niveau 1 de la demande",
-            'refuser_niveau2'     => "Refus niveau 2 de la demande",
-            'refuser_niveau3'     => "Refus niveau 3 de la demande",
-            'imprimer'            => "Impression de la demande",
+            'soumettre_demande' => "Soumission d'une demande",
+            'valider_niveau1' => 'Validation niveau 1 de la demande',
+            'valider_niveau2' => 'Validation niveau 2 de la demande',
+            'valider_niveau3' => 'Validation niveau 3 de la demande',
+            'refuser_niveau1' => 'Refus niveau 1 de la demande',
+            'refuser_niveau2' => 'Refus niveau 2 de la demande',
+            'refuser_niveau3' => 'Refus niveau 3 de la demande',
+            'imprimer' => 'Impression de la demande',
 
             // ───────── VERSEMENT ─────────
-            'soumettre_versement'  => "Soumission du versement",
-            'valider_versement'    => "Validation du versement",
-            'refuser_versement'    => "Refus du versement",
+            'soumettre_versement' => 'Soumission du versement',
+            'valider_versement' => 'Validation du versement',
+            'refuser_versement' => 'Refus du versement',
 
             // ───────── DEFAULT ─────────
-            default => ucfirst($this->action) . " de $model",
+            default => ucfirst($this->action)." de $model",
         };
     }
 }

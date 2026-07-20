@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\Historisable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Traits\Historisable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, Historisable;
+    use HasFactory, Historisable, Notifiable;
 
     protected $table = 'users';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -28,7 +29,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_deleted'  => 'boolean',
+        'is_deleted' => 'boolean',
     ];
 
     protected static function booted()
@@ -38,16 +39,15 @@ class User extends Authenticatable
                 $user->id = Str::uuid()->toString();
             }
         });
-         static::deleting(function ($user) {
-        // Bloque la suppression si c'est le super admin
-        if ($user->role && $user->role->super_admin) {
-            throw new \Illuminate\Auth\Access\AuthorizationException(
-                "Le super administrateur système ne peut pas être supprimé pour des raisons de sécurité."
-            );
-        }
-    });
+        static::deleting(function ($user) {
+            // Bloque la suppression si c'est le super admin
+            if ($user->role && $user->role->super_admin) {
+                throw new \Illuminate\Auth\Access\AuthorizationException(
+                    'Le super administrateur système ne peut pas être supprimé pour des raisons de sécurité.'
+                );
+            }
+        });
     }
-    
 
     // Relation avec un rôle
     public function role()
@@ -68,26 +68,27 @@ class User extends Authenticatable
     }
 
     // Vérifier si l'utilisateur a une permission via son rôle
-public function hasPermission($permissionName): bool
-{
-    // Si super admin → accès total
-    if ($this->role && $this->role->super_admin) {
-        return true;
+    public function hasPermission($permissionName): bool
+    {
+        // Si super admin → accès total
+        if ($this->role && $this->role->super_admin) {
+            return true;
+        }
+
+        return $this->role
+            ? $this->role->permissions()
+                ->where('nom', 'like', $permissionName.'_%')
+                ->exists()
+            : false;
     }
 
-    return $this->role
-        ? $this->role->permissions()
-            ->where('nom', 'like', $permissionName . '_%')
-            ->exists()
-        : false;
-}
     public function scopeActifs($query)
-{
-    return $query->where('is_deleted', false);
-}
-public function historiqueActions()
-{
-    return $this->morphMany(HistoriqueAction::class, 'subject');
-}
-    
+    {
+        return $query->where('is_deleted', false);
+    }
+
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
+    }
 }

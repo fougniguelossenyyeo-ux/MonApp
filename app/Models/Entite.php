@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Traits\Historisable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Traits\Historisable;
 
 class Entite extends Model
 {
@@ -15,15 +15,14 @@ class Entite extends Model
     protected $table = 'entites';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
         'libelle_entite',
         'logo',
-        
-    ];
 
-   
+    ];
 
     protected static function booted()
     {
@@ -39,15 +38,15 @@ class Entite extends Model
 
             $user = auth()->user();
 
-            if (!$user || !$user->role?->super_admin) {
+            if (! $user || ! $user->role?->super_admin) {
                 throw new \Illuminate\Auth\Access\AuthorizationException(
-                    "Une entité ne peut pas être supprimée. Utilisez la désactivation."
+                    'Une entité ne peut pas être supprimée. Utilisez la désactivation.'
                 );
             }
 
             // Nettoyage des fichiers
             if ($entite->logo) {
-                Storage::disk('public')->delete('logos/' . $entite->logo);
+                Storage::disk('public')->delete('logos/'.$entite->logo);
             }
 
             // Suppression des permissions liées
@@ -81,16 +80,15 @@ class Entite extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-        if (!$this->logo) {
+        if (! $this->logo) {
             return null;
         }
 
         $logoPath = preg_replace('#^logos/#', '', $this->logo);
 
-        return asset('storage/logos/' . $logoPath);
+        return asset('storage/logos/'.$logoPath);
     }
 
     // ───── Méthodes métier ─────
 
-   
 }

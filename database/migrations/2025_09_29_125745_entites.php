@@ -15,9 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('libelle_entite');
             $table->string('logo')->nullable(); // nouveau champ pour le logo
-             // Flag pour "suppression" visible à l'utilisateur
-         
-            
+            // Flag pour "suppression" visible à l'utilisateur
+
             $table->timestamps();
         });
     }

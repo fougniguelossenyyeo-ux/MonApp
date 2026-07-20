@@ -2,31 +2,35 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\Historisable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
+
 class Role extends Model
 {
     use HasFactory, Historisable;
 
     protected $table = 'roles';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
-        'libelle', 
+        'libelle',
         'entite_id',
-         'is_deleted',
-          'super_admin',
+        'is_deleted',
+        'super_admin',
     ];
- protected $casts = [
+
+    protected $casts = [
         'super_admin' => 'boolean',
-        'is_deleted'  => 'boolean',
+        'is_deleted' => 'boolean',
     ];
+
     protected static function booted()
     {
         static::creating(function ($role) {
@@ -50,27 +54,31 @@ class Role extends Model
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(
-            Permission::class, 
-            'permission_role', 
-            'role_id', 
+            Permission::class,
+            'permission_role',
+            'role_id',
             'permission_id'
         );
     }
+
     public function entite()
     {
         return $this->belongsTo(Entite::class, 'entite_id');
     }
-     public function markAsDeleted(): void
+
+    public function markAsDeleted(): void
     {
         $this->is_deleted = true;
         $this->save();
     }
-        public function scopeActifs($query)
-{
-    return $query->where('is_deleted', false);
-}
-public function historiqueActions()
-{
-    return $this->morphMany(HistoriqueAction::class, 'subject');
-}
+
+    public function scopeActifs($query)
+    {
+        return $query->where('is_deleted', false);
+    }
+
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
+    }
 }

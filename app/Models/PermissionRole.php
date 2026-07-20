@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\Historisable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
 class PermissionRole extends Model
 {
     use HasFactory, Historisable;
 
     protected $table = 'permission_role';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -29,17 +30,20 @@ class PermissionRole extends Model
     {
         return $this->belongsTo(Permission::class, 'permission_id');
     }
-     public function markAsDeleted(): void
+
+    public function markAsDeleted(): void
     {
         $this->is_deleted = true;
         $this->save();
-    } 
-        public function scopeActifs($query)
-{
-    return $query->where('is_deleted', false);
-}
-public function historiqueActions()
-{
-    return $this->morphMany(HistoriqueAction::class, 'subject');
-}
+    }
+
+    public function scopeActifs($query)
+    {
+        return $query->where('is_deleted', false);
+    }
+
+    public function historiqueActions()
+    {
+        return $this->morphMany(HistoriqueAction::class, 'subject');
+    }
 }

@@ -38,23 +38,23 @@ return new class extends Migration
             $table->string('code_analytique')->nullable();
             $table->string('centre_analytique')->nullable();
             $table->string('code_projet')->nullable();
-             $table->text('description')->nullable(); 
-             
+            $table->text('description')->nullable();
+
             // Pièces jointes
             $table->text('pieces_jointes')->nullable();
 
             // Statut général de la demande
             $table->tinyInteger('status')->default(0); // 0=Créé, 1=Contrôleur validé, 2=DAF validé, 3=DG validé
-                $table->text('refuse_par')->nullable(); // Nouveau champ pour stocker qui a refusé la demande
+            $table->text('refuse_par')->nullable(); // Nouveau champ pour stocker qui a refusé la demande
             // Dates de validation
             $table->timestamp('date_validation_controleur')->nullable();
             $table->timestamp('date_validation_daf')->nullable();
             $table->timestamp('date_validation_dg')->nullable();
 
             // Description et motif de refus
-           
+
             $table->text('motif_refus')->nullable(); // Nouveau champ pour refus
-            $table->boolean('is_deleted')->default(false);// Champ pour marquer la demande comme supprimée sans la supprimer physiquement
+            $table->boolean('is_deleted')->default(false); // Champ pour marquer la demande comme supprimée sans la supprimer physiquement
 
             $table->timestamps();
         });

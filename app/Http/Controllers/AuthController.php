@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-
 
 class AuthController extends Controller
 {
@@ -22,13 +21,14 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required','email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard')->with('success', 'Connexion réussie '); 
+
+            return redirect()->intended('/dashboard')->with('success', 'Connexion réussie ');
         }
 
         return back()->with('error', 'Identifiants incorrects ❌')->onlyInput('email');
@@ -38,49 +38,51 @@ class AuthController extends Controller
     public function showRegisterForm()
     {
         $roles = Role::with('entite')->get();
+
         return view('auth.register', compact('roles'));
     }
 
     // Traiter l'inscription
-   public function register(Request $request)
-{
-    // Validation des champs
-    $validated = $request->validate([
-        'nom' => 'required|string|max:255',
-        'prenom' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'poste' => 'nullable|string|max:255',
-        'role_id' => 'required|string|exists:roles,id',
-        'password' => 'required|string|min:8|confirmed',
-    ]);
-
-    try {
-        // Création de l'utilisateur
-        $user = User::create([
-            'nom' => $validated['nom'],
-            'prenom' => $validated['prenom'],
-            'email' => $validated['email'],
-            'poste' => $validated['poste'] ?? null,
-            'role_id' => $validated['role_id'],
-            'password' => Hash::make($validated['password']),
+    public function register(Request $request)
+    {
+        // Validation des champs
+        $validated = $request->validate([
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'poste' => 'nullable|string|max:255',
+            'role_id' => 'required|string|exists:roles,id',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        return redirect()->route('users.list')->with('success', 'Inscription réussie');
+        try {
+            // Création de l'utilisateur
+            $user = User::create([
+                'nom' => $validated['nom'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'poste' => $validated['poste'] ?? null,
+                'role_id' => $validated['role_id'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-    } catch (\Exception $e) {
-        // Log de l'erreur pour debug
-        \Log::error('Erreur création utilisateur : ' . $e->getMessage());
+            return redirect()->route('users.list')->with('success', 'Inscription réussie');
 
-        return back()
-            ->with('error', 'Erreur lors de l’enregistrement : ' . $e->getMessage())
-            ->withInput();
+        } catch (\Exception $e) {
+            // Log de l'erreur pour debug
+            \Log::error('Erreur création utilisateur : '.$e->getMessage());
+
+            return back()
+                ->with('error', 'Erreur lors de l’enregistrement : '.$e->getMessage())
+                ->withInput();
+        }
     }
-}
 
     // Liste des utilisateurs
     public function listregister()
     {
         $users = User::with('role.entite')->orderBy('nom')->get();
+
         return view('auth.list', compact('users'));
     }
 
@@ -97,8 +99,7 @@ class AuthController extends Controller
     public function update(Request $request, $id)
     {
         // Récupérer l'utilisateur avant la validation
-    $user = User::findOrFail($id);
-
+        $user = User::findOrFail($id);
 
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
@@ -116,7 +117,7 @@ class AuthController extends Controller
 
         $user->role_id = $validated['role_id'];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
 
@@ -143,7 +144,8 @@ class AuthController extends Controller
 
         return redirect('/')->with('success', 'Déconnexion réussie');
     }
-      // Affiche le formulaire "mot de passe oublié"
+
+    // Affiche le formulaire "mot de passe oublié"
     public function showForgotPasswordForm()
     {
         return view('auth.forgot-password'); // Crée cette vue
@@ -168,7 +170,7 @@ class AuthController extends Controller
     {
         return view('auth.reset-password', [
             'token' => $token,
-            'email' => $request->email
+            'email' => $request->email,
         ]);
     }
 
@@ -185,7 +187,7 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ])->save();
             }
         );

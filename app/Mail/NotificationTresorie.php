@@ -13,8 +13,11 @@ class NotificationTresorie extends Mailable
     use Queueable, SerializesModels;
 
     public $demande;
+
     public $tresorie;      // utilisateur Trésorie
+
     public $controleur;    // utilisateur Contrôleur
+
     public $daf;           // utilisateur DAF
 
     /**
@@ -25,21 +28,21 @@ class NotificationTresorie extends Mailable
         $this->demande = $demande;
 
         // Récupérer la Trésorie de l'entité
-        $this->tresorie = User::whereHas('role', function($q) use ($demande) {
+        $this->tresorie = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['tresorie']);
+                ->whereRaw('LOWER(libelle) = ?', ['tresorie']);
         })->first();
 
         // Récupérer le Contrôleur
-        $this->controleur = User::whereHas('role', function($q) use ($demande) {
+        $this->controleur = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['controleur']);
+                ->whereRaw('LOWER(libelle) = ?', ['controleur']);
         })->first();
 
         // Récupérer le DAF qui a validé
-        $this->daf = User::whereHas('role', function($q) use ($demande) {
+        $this->daf = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['daf']);
+                ->whereRaw('LOWER(libelle) = ?', ['daf']);
         })->first();
     }
 
@@ -52,13 +55,13 @@ class NotificationTresorie extends Mailable
         $recipientName = $this->tresorie->prenom ?? 'Trésorie';
 
         return $this->subject("DPaie - Nouvelle demande validée par le DG : {$this->demande->reference_dp} ({$entite})")
-                    ->view('emails.notification_tresorie')
-                    ->with([
-                        'demande' => $this->demande,
-                        'tresorie' => $this->tresorie,
-                        'controleur' => $this->controleur,
-                        'daf' => $this->daf,
-                        'recipientName' => $recipientName,
-                    ]);
+            ->view('emails.notification_tresorie')
+            ->with([
+                'demande' => $this->demande,
+                'tresorie' => $this->tresorie,
+                'controleur' => $this->controleur,
+                'daf' => $this->daf,
+                'recipientName' => $recipientName,
+            ]);
     }
 }

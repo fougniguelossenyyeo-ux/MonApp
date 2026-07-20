@@ -13,6 +13,7 @@ class NotificationDAF extends Mailable
     use Queueable, SerializesModels;
 
     public $demande;
+
     public $daf;
 
     public function __construct(Demande $demande)
@@ -20,9 +21,9 @@ class NotificationDAF extends Mailable
         $this->demande = $demande;
 
         // Récupérer le DAF correctement
-        $this->daf = User::whereHas('role', function($q) use ($demande) {
+        $this->daf = User::whereHas('role', function ($q) use ($demande) {
             $q->where('entite_id', $demande->entite_id)
-              ->whereRaw('LOWER(libelle) = ?', ['daf']);
+                ->whereRaw('LOWER(libelle) = ?', ['daf']);
         })->first();
     }
 
@@ -32,11 +33,11 @@ class NotificationDAF extends Mailable
         $recipientName = $this->daf->prenom ?? 'DAF';
 
         return $this->subject("Nouvelle demande à valider : {$this->demande->reference_dp} - {$this->demande->denomination} ({$entite})")
-                    ->view('emails.notification_daf')
-                    ->with([
-                        'demande' => $this->demande,
-                        'daf' => $this->daf,
-                        'recipientName' => $recipientName,
-                    ]);
+            ->view('emails.notification_daf')
+            ->with([
+                'demande' => $this->demande,
+                'daf' => $this->daf,
+                'recipientName' => $recipientName,
+            ]);
     }
 }

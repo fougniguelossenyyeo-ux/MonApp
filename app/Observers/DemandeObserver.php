@@ -45,6 +45,7 @@ class DemandeObserver
                     'nouveau_statut' => $newStatus,
                     'motif_refus' => $demande->motif_annulation ?? 'Non renseigné',
                 ]);
+
                 return;
             }
 
@@ -60,6 +61,7 @@ class DemandeObserver
                 'ancien_statut' => $oldStatus,
                 'nouveau_statut' => $newStatus,
             ]);
+
             return;
         }
 
@@ -89,15 +91,15 @@ class DemandeObserver
     private function log(Demande $demande, string $action, array $details = []): void
     {
         HistoriqueAction::create([
-            'user_id'       => Auth::id() ?? null,
-            'action'        => $action,
-            'subject_type'  => Demande::class,
-            'subject_id'    => $demande->id,
-            'properties'    => $details,
-            'ip_address'    => Request::ip() ?? 'unknown',
-            'user_agent'    => Request::userAgent() ?? 'unknown',
-            'entite_id'     => $demande->entite_id,
-            'created_at'    => now(),
+            'user_id' => Auth::id() ?? null,
+            'action' => $action,
+            'subject_type' => Demande::class,
+            'subject_id' => $demande->id,
+            'properties' => $details,
+            'ip_address' => Request::ip() ?? 'unknown',
+            'user_agent' => Request::userAgent() ?? 'unknown',
+            'entite_id' => $demande->entite_id,
+            'created_at' => now(),
         ]);
     }
 }

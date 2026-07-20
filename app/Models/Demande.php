@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Historisable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use App\Traits\Historisable;
-use Illuminate\Auth\Access\AuthorizationException;
+
 class Demande extends Model
 {
     use HasFactory, Historisable;
@@ -14,7 +15,9 @@ class Demande extends Model
     protected $table = 'demandes';
 
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -48,11 +51,11 @@ class Demande extends Model
     ];
 
     protected $casts = [
-        'pieces_jointes'             => 'array',
+        'pieces_jointes' => 'array',
         'date_validation_controleur' => 'datetime',
-        'date_validation_daf'        => 'datetime',
-        'date_validation_dg'         => 'datetime',
-             'is_deleted'      => 'boolean',
+        'date_validation_daf' => 'datetime',
+        'date_validation_dg' => 'datetime',
+        'is_deleted' => 'boolean',
     ];
 
     protected static function booted()
@@ -64,42 +67,58 @@ class Demande extends Model
         });
 
         // Intercepter la suppression pour implémenter une suppression logique
-   static::deleting(function ($demande) {
+        static::deleting(function ($demande) {
 
-    $user = Auth::user();
+            $user = Auth::user();
 
-    if (!$user) {
-        throw new AuthorizationException("Utilisateur non authentifié.");
+            if (! $user) {
+                throw new AuthorizationException('Utilisateur non authentifié.');
+            }
+
+            // Vérifier si le rôle de l'utilisateur est super admin
+            if ($user->role && $user->role->super_admin) {
+                return; // autorisé
+            }
+
+            throw new AuthorizationException(
+                "Vous n'êtes pas autorisé à supprimer cette demande."
+            );
+        });
     }
 
-    // Vérifier si le rôle de l'utilisateur est super admin
-    if ($user->role && $user->role->super_admin) {
-        return; // autorisé
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
-    throw new AuthorizationException(
-        "Vous n'êtes pas autorisé à supprimer cette demande."
-    );
-});
+    public function entite()
+    {
+        return $this->belongsTo(Entite::class);
     }
 
-    public function user()     { return $this->belongsTo(User::class); }
-    public function entite()   { return $this->belongsTo(Entite::class); }
-    public function paiement() { return $this->hasOne(Paiement::class, 'demande_id', 'id'); }
-    public function PaiementVersements() {
+    public function paiement()
+    {
+        return $this->hasOne(Paiement::class, 'demande_id', 'id');
+    }
+
+    public function PaiementVersements()
+    {
         return $this->hasManyThrough(PaiementVersement::class, Paiement::class, 'demande_id', 'paiement_id');
     }
-    public function historiqueActions() {
+
+    public function historiqueActions()
+    {
         return $this->morphMany(HistoriqueAction::class, 'subject');
     }
+
     public function markAsDeleted()
-{
-    $this->is_deleted = true;
-    $this->save();
-}
-public function scopeActifs($query)
-{
-    return $query->where('is_deleted', false);
-}
- 
+    {
+        $this->is_deleted = true;
+        $this->save();
+    }
+
+    public function scopeActifs($query)
+    {
+        return $query->where('is_deleted', false);
+    }
 }

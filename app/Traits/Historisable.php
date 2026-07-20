@@ -9,9 +9,8 @@ trait Historisable
     /**
      * Enregistre une action dans l'historique
      *
-     * @param string $action  Nom de l'action (snake_case recommandé)
-     * @param array $properties  Valeurs supplémentaires (anciennes/nouvelles valeurs, motif, etc.)
-     * @return HistoriqueAction
+     * @param  string  $action  Nom de l'action (snake_case recommandé)
+     * @param  array  $properties  Valeurs supplémentaires (anciennes/nouvelles valeurs, motif, etc.)
      */
     public function logAction(string $action, array $properties = []): HistoriqueAction
     {

@@ -13,13 +13,11 @@ class PaiementValideMail extends Mailable
     use Queueable, SerializesModels;
 
     public $paiement;
+
     public $versement;
 
     /**
      * Create a new message instance.
-     *
-     * @param Paiement $paiement
-     * @param PaiementVersement $versement
      */
     public function __construct(Paiement $paiement, PaiementVersement $versement)
     {
@@ -35,11 +33,11 @@ class PaiementValideMail extends Mailable
     public function build()
     {
         return $this->subject('Paiement validé')
-                    ->view('emails.valide')
-                    ->with([
-                        'paiement' => $this->paiement,
-                        'demande' => $this->paiement->demande,
-                        'versement' => $this->versement,
-                    ]);
+            ->view('emails.valide')
+            ->with([
+                'paiement' => $this->paiement,
+                'demande' => $this->paiement->demande,
+                'versement' => $this->versement,
+            ]);
     }
 }

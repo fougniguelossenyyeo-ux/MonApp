@@ -1,14 +1,15 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\EntiteController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DemandeController;
+use App\Http\Controllers\EntiteController;
+use App\Http\Controllers\HistoriqueActionController;
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\HistoriqueActionController;
+use App\Http\Controllers\RoleController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -39,7 +40,6 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 
-
 /*
 |--------------------------------------------------------------------------
 | PROTECTED ROUTES
@@ -58,14 +58,12 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{id}', [AuthController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [AuthController::class, 'destroy'])->name('users.destroy');
 
-
     /*
     |--------------------------------------------------------------------------
     | DASHBOARD
     |--------------------------------------------------------------------------
     */
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -79,7 +77,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
-
     /*
     |--------------------------------------------------------------------------
     | ENTITES
@@ -91,7 +88,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/entites/{entite}/edit', [EntiteController::class, 'edit'])->name('entites.edit');
     Route::put('/entites/{entite}', [EntiteController::class, 'update'])->name('entites.update');
     Route::delete('/entites/{entite}', [EntiteController::class, 'destroy'])->name('entites.destroy');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -125,8 +121,7 @@ Route::middleware('auth')->group(function () {
     // Route dynamique toujours EN DERNIER
     Route::get('/demandes/{demande}', [DemandeController::class, 'show'])->name('demandes.show');
     Route::post('/demandes/{demande}/annuler', [DemandeController::class, 'annuler'])
-         ->name('demandes.annuler');
-
+        ->name('demandes.annuler');
 
     /*
     |--------------------------------------------------------------------------
@@ -135,8 +130,8 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::get('/faire-paiement', [PaiementController::class, 'index'])->name('paiements.index');
-   Route::match(['get', 'post'], '/faire-paiement/search', [PaiementController::class, 'search'])
-    ->name('faire-paiement.search');
+    Route::match(['get', 'post'], '/faire-paiement/search', [PaiementController::class, 'search'])
+        ->name('faire-paiement.search');
 
     Route::get('/paiements/valides', [PaiementController::class, 'valides'])->name('paiements.valides');
     Route::get('/paiements/partiellement', [PaiementController::class, 'partiellement'])->name('paiements.partiellement');
@@ -145,7 +140,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/paiements/{paiement}/payer', [PaiementController::class, 'payer'])->name('paiements.payer_unique');
 
-// Routes spécifiques AVANT la route dynamique
+    // Routes spécifiques AVANT la route dynamique
     Route::post('/paiements/dg-valider/{id}', [PaiementController::class, 'validerDG'])->name('paiements.validerDG');
     Route::post('/paiements/dg-refuser/{id}', [PaiementController::class, 'refuserDG'])->name('paiements.refuserDG');
 
@@ -154,10 +149,9 @@ Route::middleware('auth')->group(function () {
     // Route dynamique toujours en dernier
     Route::get('/paiements/{paiement}', [PaiementController::class, 'shown'])->name('paiements.shown');
 
-
-Route::get('/paiement/{id}', [PaiementController::class, 'showPaiement'])
-    ->name('paiements.payer');
-    });
+    Route::get('/paiement/{id}', [PaiementController::class, 'showPaiement'])
+        ->name('paiements.payer');
+});
 // Routes de gestion des permissions (protégées par auth et vérification de permission dans le controller)
 Route::middleware(['auth'])->group(function () {
 
@@ -181,9 +175,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/permissions/save', [PermissionController::class, 'saveRolePermissions'])
         ->name('permissions.save');
 
-
-// Routes pour l’historique des actions (protégées par auth)
-Route::get('/historique', [HistoriqueActionController::class, 'index'])
-     ->name('historiques.index');
-Route::get('/historique/filter', [HistoriqueActionController::class, 'filter'])->name('historiques.filter');
+    // Routes pour l’historique des actions (protégées par auth)
+    Route::get('/historique', [HistoriqueActionController::class, 'index'])
+        ->name('historiques.index');
+    Route::get('/historique/filter', [HistoriqueActionController::class, 'filter'])->name('historiques.filter');
 });

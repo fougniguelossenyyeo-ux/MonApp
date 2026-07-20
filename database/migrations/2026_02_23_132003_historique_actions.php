@@ -15,42 +15,42 @@ return new class extends Migration
 
             // Utilisateur ayant effectué l'action
             $table->foreignUuid('user_id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete()
-                  ->comment('Utilisateur ayant réalisé l\'action (NULL si supprimé)');
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->comment('Utilisateur ayant réalisé l\'action (NULL si supprimé)');
 
             // Type d'action
             $table->string('action', 80)
-                  ->comment('Type d\'action (snake_case recommandé)');
+                ->comment('Type d\'action (snake_case recommandé)');
 
             // Polymorphisme (lié à n'importe quel modèle)
             $table->uuidMorphs('subject');
 
             // Données supplémentaires
             $table->json('properties')
-                  ->nullable()
-                  ->comment('Anciennes valeurs, nouvelles valeurs, commentaire, motif rejet, etc.');
+                ->nullable()
+                ->comment('Anciennes valeurs, nouvelles valeurs, commentaire, motif rejet, etc.');
 
             $table->string('ip_address', 45)
-                  ->nullable()
-                  ->comment('Adresse IP IPv4 ou IPv6');
+                ->nullable()
+                ->comment('Adresse IP IPv4 ou IPv6');
 
             $table->string('user_agent', 255)
-                  ->nullable()
-                  ->comment('Navigateur / application');
+                ->nullable()
+                ->comment('Navigateur / application');
 
             // Entité concernée
             $table->foreignUuid('entite_id')
-                  ->nullable()
-                  ->constrained('entites')
-                  ->nullOnDelete()
-                  ->comment('Entité concernée');
+                ->nullable()
+                ->constrained('entites')
+                ->nullOnDelete()
+                ->comment('Entité concernée');
 
             // Date et heure de l'action
             $table->timestamp('created_at')
-                  ->useCurrent()
-                  ->comment('Date et heure exacte de l\'action');
+                ->useCurrent()
+                ->comment('Date et heure exacte de l\'action');
 
             // Index optimisés pour requêtes fréquentes
             $table->index('user_id', 'idx_hist_user');

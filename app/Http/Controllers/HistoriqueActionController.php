@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\HistoriqueAction;
-use App\Models\User;
 use App\Models\Demande;
+use App\Models\HistoriqueAction;
 use App\Models\PaiementVersement;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class HistoriqueActionController extends Controller
 {
@@ -19,8 +19,8 @@ class HistoriqueActionController extends Controller
             'user',
             'entite',
         ])
-        ->latest()
-        ->paginate(10);
+            ->latest()
+            ->paginate(10);
 
         $users = User::orderBy('nom')->get();
 
@@ -30,7 +30,7 @@ class HistoriqueActionController extends Controller
     /**
      * Filtrage des historiques
      */
-    public function filter(Request $request) 
+    public function filter(Request $request)
     {
         $query = HistoriqueAction::with([
             'user',

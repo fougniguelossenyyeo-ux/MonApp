@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\Historisable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\Historisable;
 use Illuminate\Support\Str;
 
 class Paiement extends Model
@@ -14,7 +14,9 @@ class Paiement extends Model
     protected $table = 'paiements';
 
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -26,14 +28,14 @@ class Paiement extends Model
         'reference_paiement',
         'date_paiement_effectif',
         'commentaire',
-        
+
     ];
 
     protected $casts = [
-        'montant_prevu'          => 'decimal:2',
-        'montant_paye'           => 'decimal:2',
+        'montant_prevu' => 'decimal:2',
+        'montant_paye' => 'decimal:2',
         'date_paiement_effectif' => 'date',
-       
+
     ];
 
     protected static function booted()
@@ -90,7 +92,6 @@ class Paiement extends Model
     /**
      * Accessor (optionnel mais pratique)
      */
-   
     public function getMontantDejaPayeAttribute(): float
     {
         return $this->montantDejaPaye();
@@ -105,9 +106,9 @@ class Paiement extends Model
     {
         return match ($this->statut) {
             'en_attente' => 'En attente',
-            'partiel'    => 'Partiel',
-            'termine'    => 'Terminé',
-            default      => 'Inconnu',
+            'partiel' => 'Partiel',
+            'termine' => 'Terminé',
+            default => 'Inconnu',
         };
     }
 
@@ -115,13 +116,9 @@ class Paiement extends Model
     {
         return match ($this->statut) {
             'en_attente' => 'bg-yellow-50 text-yellow-800',
-            'partiel'    => 'bg-orange-50 text-orange-800',
-            'termine'    => 'bg-green-50 text-green-800',
-            default      => 'bg-gray-100 text-gray-700',
+            'partiel' => 'bg-orange-50 text-orange-800',
+            'termine' => 'bg-green-50 text-green-800',
+            default => 'bg-gray-100 text-gray-700',
         };
     }
-  
-    
-
-   
 }

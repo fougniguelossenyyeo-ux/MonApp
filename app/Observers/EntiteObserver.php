@@ -38,14 +38,14 @@ class EntiteObserver
                 "suprimer_paiement_$nom",
                 "voir_historique_demande_$nom",
                 "voir_historique_paiement_$nom",
-                "voir_dashboard_$nom"
+                "voir_dashboard_$nom",
             ];
 
             foreach ($permissions as $perm) {
                 // firstOrCreate pour éviter les doublons accidentels
                 Permission::firstOrCreate(
                     [
-                        'nom'       => $perm,
+                        'nom' => $perm,
                         'entite_id' => $entite->id,
                     ],
                     [
